@@ -1,0 +1,338 @@
+{
+  "code": 200,
+  "data": [
+    {
+      "path": "/home/index",
+      "name": "dashboardWorkbench",
+      "component": "/home/index",
+      "meta": {
+        "icon": "HomeFilled",
+        "title": "工作台",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": true,
+        "isKeepAlive": true
+      }
+    },
+    {
+      "path": "/staff",
+      "name": "staff",
+      "redirect": "/staff/list",
+      "meta": {
+        "icon": "UserFilled",
+        "title": "员工管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      },
+      "children": [
+        {
+          "path": "/staff/list",
+          "name": "staffList",
+          "component": "/adminOps/staffList/index",
+          "meta": {
+            "icon": "User",
+            "title": "员工列表",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/staff/create",
+          "name": "createStaff",
+          "component": "/adminOps/createStaff/index",
+          "meta": {
+            "icon": "CirclePlus",
+            "title": "新建员工账号",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/staff/detail/:staffId",
+          "name": "staffDetail",
+          "component": "/adminOps/staffDetail/index",
+          "meta": {
+            "icon": "View",
+            "title": "员工详情",
+            "isLink": "",
+            "isHide": true,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": false
+          }
+        },
+        {
+          "path": "/staff/edit/:staffId",
+          "name": "editStaff",
+          "component": "/adminOps/editStaff/index",
+          "meta": {
+            "icon": "Edit",
+            "title": "编辑员工",
+            "isLink": "",
+            "isHide": true,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": false
+          }
+        }
+      ]
+    },
+    {
+      "path": "/lead",
+      "name": "lead",
+      "redirect": "/lead/list",
+      "meta": {
+        "icon": "Tickets",
+        "title": "客户线索",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      },
+      "children": [
+        {
+          "path": "/lead/list",
+          "name": "leadList",
+          "component": "/adminOps/leadList/index",
+          "meta": {
+            "icon": "Menu",
+            "title": "线索列表",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/lead/create",
+          "name": "createLead",
+          "component": "/adminOps/createLead/index",
+          "meta": {
+            "icon": "CirclePlus",
+            "title": "新建线索",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/lead/detail/:leadId",
+          "name": "leadDetail",
+          "component": "/adminOps/leadDetail/index",
+          "meta": {
+            "icon": "View",
+            "title": "线索详情",
+            "isLink": "",
+            "isHide": true,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": false
+          }
+        },
+        {
+          "path": "/lead/edit/:leadId",
+          "name": "editLead",
+          "component": "/adminOps/editLead/index",
+          "meta": {
+            "icon": "Edit",
+            "title": "编辑线索",
+            "isLink": "",
+            "isHide": true,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": false
+          }
+        },
+        {
+          "path": "/lead/guest",
+          "name": "guestLeadList",
+          "component": "/adminOps/guestLeadList/index",
+          "meta": {
+            "icon": "Message",
+            "title": "预约留言",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        }
+      ]
+    },
+    {
+      "path": "/contract",
+      "name": "contract",
+      "redirect": "/contract/list",
+      "meta": {
+        "icon": "DocumentChecked",
+        "title": "合同管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      },
+      "children": [
+        {
+          "path": "/contract/list",
+          "name": "contractList",
+          "component": "/adminOps/contractList/index",
+          "meta": {
+            "icon": "Menu",
+            "title": "合同列表",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/contract/create",
+          "name": "createContract",
+          "component": "/adminOps/createContract/index",
+          "meta": {
+            "icon": "CirclePlus",
+            "title": "新建合同",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/contract/detail/:contractId",
+          "name": "contractDetail",
+          "component": "/adminOps/contractDetail/index",
+          "meta": {
+            "icon": "View",
+            "title": "合同详情",
+            "isLink": "",
+            "isHide": true,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": false
+          }
+        }
+      ]
+    },
+    {
+      "path": "/worker",
+      "name": "worker",
+      "redirect": "/worker/list",
+      "meta": {
+        "icon": "Avatar",
+        "title": "阿姨管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      },
+      "children": [
+        {
+          "path": "/worker/list",
+          "name": "workerList",
+          "component": "/adminOps/workerList/index",
+          "meta": {
+            "icon": "Menu",
+            "title": "阿姨档案",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/worker/create",
+          "name": "createWorker",
+          "component": "/adminOps/createWorker/index",
+          "meta": {
+            "icon": "CirclePlus",
+            "title": "新建阿姨档案",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        },
+        {
+          "path": "/worker/detail/:workerId",
+          "name": "workerDetail",
+          "component": "/adminOps/workerDetail/index",
+          "meta": {
+            "icon": "View",
+            "title": "阿姨档案详情",
+            "isLink": "",
+            "isHide": true,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": false
+          }
+        },
+        {
+          "path": "/worker/edit/:workerId",
+          "name": "editWorker",
+          "component": "/adminOps/editWorker/index",
+          "meta": {
+            "icon": "Edit",
+            "title": "编辑阿姨档案",
+            "isLink": "",
+            "isHide": true,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": false
+          }
+        }
+      ]
+    },
+    {
+      "path": "/user",
+      "name": "user",
+      "redirect": "/user/list",
+      "meta": {
+        "icon": "Document",
+        "title": "用户管理",
+        "isLink": "",
+        "isHide": false,
+        "isFull": false,
+        "isAffix": false,
+        "isKeepAlive": true
+      },
+      "children": [
+        {
+          "path": "/user/list",
+          "name": "userList",
+          "component": "/adminOps/userList/index",
+          "meta": {
+            "icon": "Menu",
+            "title": "用户列表",
+            "isLink": "",
+            "isHide": false,
+            "isFull": false,
+            "isAffix": false,
+            "isKeepAlive": true
+          }
+        }
+      ]
+    }
+  ],
+  "msg": "success"
+}

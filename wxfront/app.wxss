@@ -1,0 +1,15 @@
+/**app.wxss**/
+page {
+  background-color: #f7f8fa;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Segoe UI, Arial, Roboto, 'PingFang SC', 'miui', 'Hiragino Sans GB', 'Microsoft Yahei', sans-serif;
+}
+
+view, text, image, scroll-view {
+  box-sizing: border-box;
+}
+
+.container {
+  padding: 20rpx;
+  min-height: 100vh;
+}

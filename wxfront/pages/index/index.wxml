@@ -1,0 +1,73 @@
+<view class="container">
+  <view class="header">
+    <view class="title">精选阿姨</view>
+    <view class="subtitle">实名认证，信息清晰，帮您更快找到合适人选</view>
+  </view>
+
+  <view class="filter-panel">
+    <view class="quick-filters">
+      <view class="quick-item {{selectedQuickFilter === 'all' ? 'active' : ''}}" data-type="all" bindtap="onQuickFilterTap">全部</view>
+      <view class="quick-item {{selectedQuickFilter === 'available' ? 'active' : ''}}" data-type="available" bindtap="onQuickFilterTap">可预约</view>
+      <view class="quick-item {{selectedQuickFilter === 'recommended' ? 'active' : ''}}" data-type="recommended" bindtap="onQuickFilterTap">优先推荐</view>
+    </view>
+
+    <view class="search-grid">
+      <input
+        class="filter-input"
+        placeholder="搜索姓名、服务类型或地点"
+        value="{{keywordInput}}"
+        bindinput="onKeywordInput"
+        confirm-type="search"
+        bindconfirm="applyFilters"
+      />
+      <picker mode="selector" range="{{jobTypeOptions}}" value="{{jobTypeIndex}}" bindchange="onJobTypeChange">
+        <view class="picker-input">{{jobTypeOptions[jobTypeIndex] || '选择服务类型'}}</view>
+      </picker>
+      <input
+        class="filter-input"
+        placeholder="输入服务地点，如：浦东"
+        value="{{serviceAreaInput}}"
+        bindinput="onServiceAreaInput"
+        confirm-type="search"
+        bindconfirm="applyFilters"
+      />
+    </view>
+
+    <view class="action-row">
+      <view class="action-btn primary" bindtap="applyFilters">搜索</view>
+      <view class="action-btn ghost" bindtap="clearFilters">重置</view>
+    </view>
+  </view>
+
+  <view class="worker-list" wx:if="{{workers.length > 0}}">
+    <view class="worker-card" wx:for="{{workers}}" wx:key="id" bindtap="goToDetail" data-id="{{item.user_id}}">
+      <image class="avatar" src="{{item.avatar_url ? item.avatar_url : 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'}}" mode="aspectFill"></image>
+      <view class="info">
+        <view class="name-row">
+          <text class="name">{{item.display_name}}</text>
+          <text class="rating">★ {{item.rating}}</text>
+        </view>
+        <view class="status-row" wx:if="{{item.status_text}}">
+          <text class="status-tag">{{item.status_text}}</text>
+          <text class="completed-orders">已完成{{item.completed_orders}}单</text>
+        </view>
+        <view class="desc-row">
+          <text>{{item.age || '--'}}岁</text>
+          <text>{{item.experience_years}}年经验</text>
+        </view>
+        <view class="job-type" wx:if="{{item.jobTypesText}}">{{item.jobTypesText}}</view>
+        <view class="tags-row" wx:if="{{item.skillsArray.length > 0}}">
+          <text class="tag" wx:for="{{item.skillsArray}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="loading-status">
+      <text wx:if="{{loading}}">加载中...</text>
+      <text wx:elif="{{noMore}}">没有更多了</text>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:if="{{!loading && workers.length === 0}}">
+    <text>暂时没有符合条件的阿姨，换个筛选试试</text>
+  </view>
+</view>

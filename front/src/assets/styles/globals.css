@@ -1,0 +1,33 @@
+:root {
+  --g-navbar-min-height: 50px;
+  --g-tabbar-min-height: 60px;
+
+  color-scheme: light;
+
+  &.dark {
+    color-scheme: dark;
+  }
+}
+
+* {
+  scrollbar-color: hsl(var(--scrollbar-color)) transparent;
+  scrollbar-width: thin;
+}
+
+html {
+  overscroll-behavior: none;
+}
+
+body {
+  box-sizing: border-box;
+  margin: 0;
+  text-autospace: normal;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 全局样式 */
+#app {
+  overflow: hidden auto;
+  font-size: 14px;
+  background-color: var(--g-bg);
+}
