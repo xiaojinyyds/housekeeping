@@ -202,3 +202,70 @@
   font-size: 28rpx;
   color: #999;
 }
+
+/* ===== 隐私政策弹窗 ===== */
+.privacy-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.privacy-dialog {
+  width: 580rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.18);
+}
+
+.privacy-dialog-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #222;
+  text-align: center;
+  padding: 40rpx 40rpx 24rpx;
+}
+
+.privacy-dialog-body {
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.8;
+  padding: 0 40rpx 32rpx;
+}
+
+.privacy-link {
+  display: inline;
+  color: #f08c2e;
+  text-decoration: underline;
+  font-size: 26rpx;
+}
+
+.privacy-dialog-btns {
+  display: flex;
+  border-top: 1rpx solid #eee;
+}
+
+.privacy-btn {
+  flex: 1;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  font-size: 30rpx;
+}
+
+.privacy-btn-cancel {
+  color: #999;
+  border-right: 1rpx solid #eee;
+}
+
+.privacy-btn-confirm {
+  color: #f08c2e;
+  font-weight: 700;
+}

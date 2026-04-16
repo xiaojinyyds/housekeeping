@@ -1,7 +1,5 @@
 {
   "navigationBarTitleText": "找阿姨",
   "enablePullDownRefresh": true,
-  "enableShareAppMessage": true,
-  "enableShareTimeline": true,
   "backgroundColor": "#f7f8fa"
 }

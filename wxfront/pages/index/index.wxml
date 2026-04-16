@@ -1,3 +1,21 @@
+<!-- 自定义隐私政策弹窗 -->
+<view class="privacy-mask" wx:if="{{showPrivacyModal}}">
+  <view class="privacy-dialog">
+    <view class="privacy-dialog-title">隐私政策提示</view>
+    <view class="privacy-dialog-body">
+      <text>我们非常重视您的个人信息和隐私保护。在使用我们的服务前，请您仔细阅读并同意</text>
+      <navigator url="/pages/privacy/index" open-type="navigate" class="privacy-link">《隐私政策》</navigator>
+      <text>和</text>
+      <navigator url="/pages/agreement/index" open-type="navigate" class="privacy-link">《用户服务协议》</navigator>
+      <text>。点击"同意"即表示您已阅读并同意上述协议。</text>
+    </view>
+    <view class="privacy-dialog-btns">
+      <view class="privacy-btn privacy-btn-cancel" bindtap="onPrivacyDisagree">不同意</view>
+      <view class="privacy-btn privacy-btn-confirm" bindtap="onPrivacyAgree">同意</view>
+    </view>
+  </view>
+</view>
+
 <view class="container">
   <view class="header">
     <view class="title">精选阿姨</view>

@@ -66,8 +66,17 @@
               <el-option label="停用" value="inactive" />
             </el-select>
           </el-form-item>
-          <el-form-item label="服务区域">
-            <el-input v-model="form.serviceAreasText" placeholder="多个区域请用逗号分隔，如：浦东新区,徐汇区" />
+          <el-form-item label="可接单区域">
+            <el-cascader
+              v-model="form.service_area_codes"
+              :options="regionOptions"
+              :props="cascaderProps"
+              placeholder="请选择可接单区域"
+              clearable
+              filterable
+              multiple
+              class="full-width"
+            />
           </el-form-item>
         </div>
 
@@ -191,6 +200,7 @@ import { ElMessage } from "element-plus";
 import type { FormInstance, FormRules } from "element-plus";
 import { getWorkerDetailApi, updateWorkerApi } from "@/api/modules/business";
 import ImageUploader from "../createWorker/components/ImageUploader.vue";
+import { useCascaderAreaData } from "@vant/area-data";
 
 interface ExperienceItem {
   start_date: string;
@@ -210,6 +220,9 @@ interface WorkerEditFormState {
   emergency_contact: string;
   emergency_phone: string;
   address: string;
+  address_codes: string[];
+  address_detail: string;
+  service_area_codes: string[][];
   skillsText: string;
   jobTypesText: string;
   serviceAreasText: string;
@@ -258,6 +271,9 @@ const createDefaultForm = (): WorkerEditFormState => ({
   emergency_contact: "",
   emergency_phone: "",
   address: "",
+  address_codes: [],
+  address_detail: "",
+  service_area_codes: [],
   skillsText: "",
   jobTypesText: "",
   serviceAreasText: "",
@@ -282,6 +298,18 @@ const createDefaultForm = (): WorkerEditFormState => ({
 });
 
 const form = reactive<WorkerEditFormState>(createDefaultForm());
+
+// 使用 @vant/area-data 的省市区数据
+const regionOptions = useCascaderAreaData();
+
+// 级联选择器配置
+const cascaderProps = {
+  value: 'value',
+  label: 'text',
+  children: 'children',
+  checkStrictly: false,
+  emitPath: true
+};
 
 const rules: FormRules<WorkerEditFormState> = {
   real_name: [{ required: true, message: "请输入真实姓名", trigger: "blur" }],
@@ -342,9 +370,12 @@ const loadDetail = async () => {
       emergency_contact: data.emergency_contact || "",
       emergency_phone: data.emergency_phone || "",
       address: data.address || "",
+      address_codes: data.address_codes || [],
+      address_detail: data.address_detail || "",
       skillsText: Array.isArray(data.skills) ? data.skills.join(",") : "",
       jobTypesText: Array.isArray(data.job_types) ? data.job_types.join(",") : "",
       serviceAreasText: Array.isArray(data.service_areas) ? data.service_areas.join(",") : "",
+      service_area_codes: data.service_area_codes || [],
       introduction: data.introduction || "",
       recommendedReasonsText: Array.isArray(data.recommended_reasons) ? data.recommended_reasons.join("\n") : "",
       internal_remark: data.internal_remark || "",
@@ -381,6 +412,33 @@ const submitForm = async () => {
 
   submitting.value = true;
   try {
+    // 构建完整地址
+    const getRegionName = (codes: string[]) => {
+      if (!codes || codes.length === 0) return "";
+      let names: string[] = [];
+      let current = regionOptions;
+
+      for (const code of codes) {
+        const found = current.find(item => item.value === code);
+        if (found) {
+          names.push(found.text);
+          current = found.children || [];
+        }
+      }
+      return names.join("");
+    };
+
+    // 构建服务区域名称
+    // service_area_codes 可能是 string[][] (多选) 或 string[] (单选)
+    const getServiceAreaNames = (codes: any) => {
+      if (!codes || !Array.isArray(codes)) return [];
+      // 如果是单选（每个元素是字符串），转换为嵌套数组
+      const codeArrays: string[][] = codes.length > 0 && typeof codes[0] === "string"
+        ? [codes as string[]]
+        : codes as string[][];
+      return codeArrays.map(codeArray => getRegionName(codeArray)).filter(Boolean);
+    };
+
     await updateWorkerApi(workerId, {
       real_name: form.real_name,
       phone: form.phone,
@@ -392,9 +450,12 @@ const submitForm = async () => {
       emergency_contact: form.emergency_contact,
       emergency_phone: form.emergency_phone,
       address: form.address,
+      address_codes: form.address_codes || [],
+      address_detail: form.address_detail || "",
       skills: splitCommaText(form.skillsText),
       job_types: splitCommaText(form.jobTypesText),
-      service_areas: splitCommaText(form.serviceAreasText),
+      service_areas: getServiceAreaNames(form.service_area_codes || []),
+      service_area_codes: form.service_area_codes || [],
       introduction: form.introduction,
       recommended_reasons: splitCommaText(form.recommendedReasonsText),
       work_experiences: buildExperiencePayload(),

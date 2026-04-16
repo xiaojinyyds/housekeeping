@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="content">
+    <view class="title">隐私政策</view>
+    <view class="update-time">更新时间：2026年4月15日</view>
+
+    <view class="section">
+      <view class="section-title">一、信息收集</view>
+      <view class="section-content">
+        <view class="p">我们收集您以下信息以提供服务：</view>
+        <view class="p">1. <text class="bold">手机号码</text>：用于账号注册、登录和联系您</view>
+        <view class="p">2. <text class="bold">位置信息</text>：用于匹配附近的家政服务人员</view>
+        <view class="p">3. <text class="bold">预约信息</text>：用于下单和服务记录</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">二、信息使用</view>
+      <view class="section-content">
+        <view class="p">我们使用收集的信息用于：</view>
+        <view class="p">1. 提供家政服务匹配和预约</view>
+        <view class="p">2. 联系您确认预约详情</view>
+        <view class="p">3. 推送服务进度通知</view>
+        <view class="p">4. 改进我们的服务质量</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">三、信息存储</view>
+      <view class="section-content">
+        <view class="p">我们承诺采取加密措施保护您的信息安全，不对外泄露您的个人信息。</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">四、用户权利</view>
+      <view class="section-content">
+        <view class="p">您有权访问、更正、删除您的个人信息。如需操作，请联系客服。</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">五、联系我们</view>
+      <view class="section-content">
+        <view class="p">如有疑问，请联系：18284575696</view>
+        <view class="p">邮箱：18284575696@163.com</view>
+      </view>
+    </view>
+  </view>
+</view>

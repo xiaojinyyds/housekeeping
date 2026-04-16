@@ -129,7 +129,7 @@ import { useUserStore } from "@/stores/modules/user";
 const router = useRouter();
 const userStore = useUserStore();
 const currentUserName = computed(
-  () => userStore.userInfo?.real_name || userStore.userInfo?.name || userStore.userInfo?.nickname || "当前登录账号"
+  () => userStore.userInfo?.name || userStore.userInfo?.nickname || "当前登录账号"
 );
 
 const formRef = ref<FormInstance>();

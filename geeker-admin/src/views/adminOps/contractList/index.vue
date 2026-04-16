@@ -181,8 +181,8 @@ const statusTypeMap: Record<string, "info" | "warning" | "success" | "danger"> =
   refunded: "danger"
 };
 
-const formatMoney = (value?: number | null) => {
-  if (value === null || value === undefined || value === "") return "0.00";
+const formatMoney = (value?: number | null | string) => {
+  if (value === null || value === undefined || value === "" || isNaN(Number(value))) return "0.00";
   return Number(value).toFixed(2);
 };
 

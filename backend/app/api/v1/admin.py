@@ -229,7 +229,7 @@ async def update_user_status(
         )
 
 
-@router.get("/workers/list", summary="??????????/???")
+@router.get("/workers/list", summary="获取阿姨列表/管理端")
 async def get_workers_admin(
     page: int = Query(1, ge=1, description="??"),
     page_size: int = Query(10, ge=1, le=100, description="????"),
@@ -297,7 +297,7 @@ async def get_workers_admin(
             "page_size": page_size,
             "total_pages": (total + page_size - 1) // page_size
         },
-        message="????"
+        message="获取成功"
     )
 
 
@@ -389,7 +389,7 @@ async def update_worker_recommend(
         )
 
 
-@router.get("/statistics", summary="?????????")
+@router.get("/statistics", summary="获取统计数据")
 async def get_statistics(
     user_role: str = Depends(get_current_user_role),
     current_user_id: str = Depends(get_current_user_id),
@@ -398,7 +398,7 @@ async def get_statistics(
     if user_role not in ["admin", "staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="????"
+            detail="无权操作"
         )
 
     try:
@@ -610,13 +610,13 @@ async def get_statistics(
                     "staff_ranking": staff_ranking
                 }
             },
-            message="????"
+            message="获取成功"
         )
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"????????: {str(e)}"
+            detail=f"获取统计数据失败: {str(e)}"
         )
 
 
@@ -908,7 +908,7 @@ async def delete_user(
         )
 
 
-@router.post("/workers/create", summary="??????????/???")
+@router.post("/workers/create", summary="创建阿姨档案/管理端")
 async def create_worker(
     request: dict,
     user_role: str = Depends(get_current_user_role),
@@ -918,7 +918,7 @@ async def create_worker(
     if user_role not in ["admin", "staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="????"
+            detail="无权操作"
         )
 
     experience_years = request.get("experience_years", request.get("work_years"))
@@ -942,34 +942,34 @@ async def create_worker(
         if normalized_request.get(field) in [None, "", []]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"??????: {field}"
+                detail=f"缺少必要字段: {field}"
             )
 
     if normalized_request.get("experience_years") in [None, ""]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="??????: experience_years"
+            detail="缺少从业年限"
         )
 
     existing_phone = db.query(User).filter(User.phone == normalized_request["phone"]).first()
     if existing_phone:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="????????"
+            detail="该手机号已被注册"
         )
 
     existing_id_card = db.query(WorkerProfile).filter(WorkerProfile.id_card == normalized_request["id_card"]).first()
     if existing_id_card:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="?????????"
+            detail="该身份证号已被注册"
         )
 
     existing_user_id_card = db.query(User).filter(User.id_card == normalized_request["id_card"]).first()
     if existing_user_id_card:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="??????????"
+            detail="该身份证号已被使用"
         )
 
     try:
@@ -1027,6 +1027,7 @@ async def create_worker(
             recommended_reasons=recommended_reasons,
             internal_remark=normalized_request.get("internal_remark"),
             service_areas=service_areas,
+            service_area_codes=normalized_request.get("service_area_codes") or [],
             hourly_rate=(normalized_request.get("hourly_rate") or None),
             expected_salary=(normalized_request.get("expected_salary") or None),
             current_status=normalized_request.get("current_status") or "available",
@@ -1044,6 +1045,7 @@ async def create_worker(
         )
 
         db.add(worker_profile)
+        db.flush()  # 触发 ID 生成
         replace_worker_experiences(db, worker_profile.id, work_experiences)
         db.commit()
         db.refresh(worker_profile)
@@ -1057,7 +1059,7 @@ async def create_worker(
                     "email": login_email
                 }
             },
-            message="????????"
+            message="阿姨档案创建成功"
         )
     except HTTPException:
         raise
@@ -1065,10 +1067,10 @@ async def create_worker(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"????: {str(e)}"
+            detail=f"操作失败: {str(e)}"
         )
 
-@router.put("/workers/{worker_id}", summary="??????????/???")
+@router.put("/workers/{worker_id}", summary="更新阿姨档案/管理端")
 async def update_worker(
     worker_id: str,
     request: dict,
@@ -1078,7 +1080,7 @@ async def update_worker(
     if user_role not in ["admin", "staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="????"
+            detail="无权操作"
         )
 
     worker = db.query(WorkerProfile).filter(WorkerProfile.user_id == worker_id).first()
@@ -1087,7 +1089,7 @@ async def update_worker(
     if not worker or not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="???????"
+            detail="阿姨不存在"
         )
 
     normalized_request = dict(request or {})
@@ -1098,7 +1100,7 @@ async def update_worker(
         if existing_phone:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="????????"
+                detail="该手机号已被使用"
             )
 
     id_card = normalized_request.get("id_card")
@@ -1110,13 +1112,13 @@ async def update_worker(
         if existing_id_card:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="?????????"
+                detail="该身份证号已被注册"
             )
         existing_user_id_card = db.query(User).filter(User.id_card == id_card, User.id != worker_id).first()
         if existing_user_id_card:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="??????????"
+                detail="该身份证号已被使用"
             )
 
     try:
@@ -1158,6 +1160,8 @@ async def update_worker(
             worker.job_types = normalize_list_field(normalized_request.get("job_types"), "job_types") or []
         if "service_areas" in normalized_request:
             worker.service_areas = normalize_list_field(normalized_request.get("service_areas"), "service_areas") or []
+        if "service_area_codes" in normalized_request:
+            worker.service_area_codes = normalized_request.get("service_area_codes") or []
         if "recommended_reasons" in normalized_request:
             worker.recommended_reasons = normalize_list_field(
                 normalized_request.get("recommended_reasons"),
@@ -1197,7 +1201,7 @@ async def update_worker(
 
         return ApiResponse.success(
             data=worker_dict,
-            message="????????"
+            message="阿姨档案更新成功"
         )
     except HTTPException:
         raise
@@ -1205,5 +1209,5 @@ async def update_worker(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"????: {str(e)}"
+            detail=f"操作失败: {str(e)}"
         )

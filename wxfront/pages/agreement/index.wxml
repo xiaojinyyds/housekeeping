@@ -1,0 +1,55 @@
+<view class="container">
+  <view class="content">
+    <view class="title">用户服务协议</view>
+    <view class="update-time">更新时间：2026年4月15日</view>
+
+    <view class="section">
+      <view class="section-title">一、服务说明</view>
+      <view class="section-content">
+        <view class="p">家政优选平台（以下简称"我们"）致力于为用户提供便捷的家政服务匹配服务。通过本平台，用户可以浏览家政服务人员信息、预约服务等。</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">二、用户注册</view>
+      <view class="section-content">
+        <view class="p">1. 您在使用本服务前需要注册账号</view>
+        <view class="p">2. 您应提供真实、准确的个人信息</view>
+        <view class="p">3. 您有责任妥善保管账户信息，因个人保管不当造成的损失由用户自行承担</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">三、服务预约</view>
+      <view class="section-content">
+        <view class="p">1. 预约成功后，我们将在服务开始前与您确认</view>
+        <view class="p">2. 如需取消或更改预约，请提前通知</view>
+        <view class="p">3. 服务费用以实际下单时显示的价格为准</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">四、服务完成</view>
+      <view class="section-content">
+        <view class="p">1. 服务完成后，请对服务进行评价</view>
+        <view class="p">2. 如对服务不满意，请及时联系客服处理</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">五、免责声明</view>
+      <view class="section-content">
+        <view class="p">1. 因不可抗力导致的服务无法提供，我们不承担责任</view>
+        <view class="p">2. 用户因个人原因造成的损失，我们不承担责任</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">六、联系我们</view>
+      <view class="section-content">
+        <view class="p">客服电话：18284575696</view>
+        <view class="p">邮箱：18284575696@163.com</view>
+      </view>
+    </view>
+  </view>
+</view>

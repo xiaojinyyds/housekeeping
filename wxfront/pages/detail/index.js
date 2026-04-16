@@ -67,6 +67,7 @@ Page({
     worker: null,
     loading: true,
     showModal: false,
+    showPrivacyModal: false,
     defaultAvatar: "https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0",
     form: { name: "", phone: "" }
   },
@@ -145,8 +146,7 @@ Page({
     const add = (url, label) => {
       if (url) certImages.push({ url, label });
     };
-    add(worker.id_card_front, "身份证正面");
-    add(worker.id_card_back, "身份证反面");
+    // 不展示身份证正反面，保护用户隐私
     add(worker.health_certificate, "健康证");
     add(worker.health_report, "体检报告");
     add(worker.practice_certificate, "职业证书");
@@ -193,7 +193,30 @@ Page({
   },
 
   showBookModal() {
+    // 检查是否已同意隐私政策
+    const agreed = wx.getStorageSync('privacyAgreed');
+    if (!agreed) {
+      this.setData({ showPrivacyModal: true });
+      return;
+    }
     this.setData({ showModal: true });
+  },
+
+  hidePrivacyModal() {
+    this.setData({ showPrivacyModal: false });
+  },
+
+  goToPrivacy() {
+    wx.navigateTo({ url: '/pages/privacy/index' });
+  },
+
+  goToAgreement() {
+    wx.navigateTo({ url: '/pages/agreement/index' });
+  },
+
+  agreePrivacy() {
+    wx.setStorageSync('privacyAgreed', true);
+    this.setData({ showPrivacyModal: false, showModal: true });
   },
 
   hideBookModal() {

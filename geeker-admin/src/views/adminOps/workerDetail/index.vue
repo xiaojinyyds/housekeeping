@@ -73,16 +73,6 @@
               <span v-if="!(detail.service_areas || []).length" class="empty-text">暂无</span>
             </div>
           </div>
-          <div class="tag-block">
-            <label>服务项目</label>
-            <div class="service-list" v-if="(detail.services || []).length">
-              <div v-for="service in detail.services" :key="service.id" class="service-item">
-                <strong>{{ service.name }}</strong>
-                <span>{{ service.price ? `${service.price} 元` : "-" }}</span>
-              </div>
-            </div>
-            <span v-else class="empty-text">暂无</span>
-          </div>
         </div>
       </div>
 

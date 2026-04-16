@@ -114,11 +114,18 @@ const clearImage = () => {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 180px;
+  height: 120px;
   overflow: hidden;
   border: 1px dashed var(--el-border-color);
-  border-radius: 12px;
+  border-radius: 8px;
   background: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.preview:hover,
+.empty:hover {
+  border-color: var(--el-color-primary);
+  background: #f5f7ff;
 }
 
 .preview-image {
@@ -150,19 +157,22 @@ const clearImage = () => {
 }
 
 .empty-icon {
-  font-size: 28px;
+  font-size: 24px;
+  color: var(--el-color-primary);
 }
 
 .actions {
   display: flex;
-  gap: 12px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 6px;
+  justify-content: center;
 }
 
 .tip {
   margin-top: 4px;
   color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
 }
 </style>

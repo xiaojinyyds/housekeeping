@@ -4,12 +4,18 @@
       <div>
         <h2>新建阿姨档案</h2>
         <p>系统自动生成内部登录账号，前台展示与小程序展示会直接复用这里的内容。</p>
+        <p v-if="hasDraft" class="draft-hint">
+          <el-icon><Warning /></el-icon> 检测到暂存数据，可点击「继续填写」恢复
+        </p>
       </div>
-      <el-button @click="router.push('/worker/list')">返回列表</el-button>
+      <div class="header-actions">
+        <el-button v-if="hasDraft" type="warning" plain @click="loadDraft">继续填写</el-button>
+        <el-button @click="router.push('/worker/list')">返回列表</el-button>
+      </div>
     </div>
 
     <div class="card form-card">
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="worker-form">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="worker-form" v-if="form">
         <div class="grid three">
           <el-form-item label="真实姓名" prop="real_name">
             <el-input v-model="form.real_name" placeholder="请输入真实姓名" />
@@ -53,6 +59,18 @@
         </div>
 
         <div class="grid three">
+          <el-form-item label="可接单区域" prop="service_area_codes">
+            <el-cascader
+              v-model="form.service_area_codes"
+              :options="regionOptions"
+              :props="cascaderProps"
+              placeholder="请选择可接单区域"
+              clearable
+              filterable
+              multiple
+              class="full-width"
+            />
+          </el-form-item>
           <el-form-item label="接单类型">
             <el-input v-model="form.jobTypesText" placeholder="多个类型请用逗号分隔，如：住家保姆,月嫂" />
           </el-form-item>
@@ -66,18 +84,27 @@
               <el-option label="停用" value="inactive" />
             </el-select>
           </el-form-item>
-          <el-form-item label="服务区域">
-            <el-input v-model="form.serviceAreasText" placeholder="多个区域请用逗号分隔，如：浦东新区,徐汇区" />
-          </el-form-item>
         </div>
 
-        <el-form-item label="居住地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入居住地址" />
-        </el-form-item>
-
-        <el-form-item label="技能标签" prop="skillsText">
-          <el-input v-model="form.skillsText" placeholder="多个标签请用逗号分隔，如：做饭,保洁,带娃" />
-        </el-form-item>
+        <div class="grid three">
+          <el-form-item label="居住地址" prop="address_codes">
+            <el-cascader
+              v-model="form.address_codes"
+              :options="regionOptions"
+              :props="cascaderProps"
+              placeholder="请选择居住地址"
+              clearable
+              filterable
+              class="full-width"
+            />
+          </el-form-item>
+          <el-form-item label="详细地址" prop="address_detail">
+            <el-input v-model="form.address_detail" placeholder="请输入详细地址（街道、门牌号等）" />
+          </el-form-item>
+          <el-form-item label="技能标签" prop="skillsText">
+            <el-input v-model="form.skillsText" placeholder="多个标签请用逗号分隔，如：做饭,保洁,带娃" />
+          </el-form-item>
+        </div>
 
         <el-form-item label="个人简介" prop="introduction">
           <el-input v-model="form.introduction" type="textarea" :rows="4" placeholder="请输入阿姨的经验、擅长方向和服务特点" />
@@ -101,7 +128,7 @@
             <el-button type="primary" plain @click="addExperience">新增履历</el-button>
           </div>
 
-          <div v-if="form.work_experiences.length" class="experience-list">
+          <div v-if="form && form.work_experiences && form.work_experiences.length" class="experience-list">
             <div v-for="(item, index) in form.work_experiences" :key="index" class="experience-card">
               <div class="grid three">
                 <el-form-item :label="`开始日期 ${index + 1}`">
@@ -129,35 +156,51 @@
           <el-input v-model="form.internal_remark" type="textarea" :rows="3" placeholder="仅后台可见" />
         </el-form-item>
 
-        <el-form-item label="头像">
-          <ImageUploader v-model="form.avatar_url" folder="avatars" tip="建议上传清晰正面照" />
-        </el-form-item>
+        <div class="upload-section">
+          <div class="section-head">
+            <div>
+              <h3>头像照片</h3>
+              <p>建议上传清晰正面照，用于小程序展示</p>
+            </div>
+          </div>
+          <div class="avatar-upload">
+            <ImageUploader v-model="form.avatar_url" folder="avatars" tip="建议尺寸 200x200 像素以上" />
+          </div>
+        </div>
 
-        <div class="upload-grid">
-          <el-form-item label="身份证人像面" prop="id_card_front">
-            <ImageUploader v-model="form.id_card_front" folder="worker-id-card" />
-          </el-form-item>
-          <el-form-item label="身份证国徽面" prop="id_card_back">
-            <ImageUploader v-model="form.id_card_back" folder="worker-id-card" />
-          </el-form-item>
-          <el-form-item label="健康证">
-            <ImageUploader v-model="form.health_certificate" folder="worker-certificates" />
-          </el-form-item>
-          <el-form-item label="体检报告">
-            <ImageUploader v-model="form.health_report" folder="worker-certificates" />
-          </el-form-item>
-          <el-form-item label="职业证书">
-            <ImageUploader v-model="form.practice_certificate" folder="worker-certificates" />
-          </el-form-item>
-          <el-form-item label="其他证件1">
-            <ImageUploader v-model="form.other_certificate_1" folder="worker-certificates" />
-          </el-form-item>
-          <el-form-item label="其他证件2">
-            <ImageUploader v-model="form.other_certificate_2" folder="worker-certificates" />
-          </el-form-item>
-          <el-form-item label="其他证件3">
-            <ImageUploader v-model="form.other_certificate_3" folder="worker-certificates" />
-          </el-form-item>
+        <div class="upload-section">
+          <div class="section-head">
+            <div>
+              <h3>证件照片</h3>
+              <p>请上传相关证件照片，确保清晰可见</p>
+            </div>
+          </div>
+          <div class="certificate-grid">
+            <el-form-item label="身份证人像面" prop="id_card_front">
+              <ImageUploader v-model="form.id_card_front" folder="worker-id-card" />
+            </el-form-item>
+            <el-form-item label="身份证国徽面" prop="id_card_back">
+              <ImageUploader v-model="form.id_card_back" folder="worker-id-card" />
+            </el-form-item>
+            <el-form-item label="健康证">
+              <ImageUploader v-model="form.health_certificate" folder="worker-certificates" />
+            </el-form-item>
+            <el-form-item label="体检报告">
+              <ImageUploader v-model="form.health_report" folder="worker-certificates" />
+            </el-form-item>
+            <el-form-item label="职业证书">
+              <ImageUploader v-model="form.practice_certificate" folder="worker-certificates" />
+            </el-form-item>
+            <el-form-item label="其他证件1">
+              <ImageUploader v-model="form.other_certificate_1" folder="worker-certificates" />
+            </el-form-item>
+            <el-form-item label="其他证件2">
+              <ImageUploader v-model="form.other_certificate_2" folder="worker-certificates" />
+            </el-form-item>
+            <el-form-item label="其他证件3">
+              <ImageUploader v-model="form.other_certificate_3" folder="worker-certificates" />
+            </el-form-item>
+          </div>
         </div>
 
         <div class="switch-row">
@@ -177,6 +220,7 @@
 
         <div class="actions">
           <el-button @click="resetForm">重置</el-button>
+          <el-button type="info" @click="saveDraft">暂存</el-button>
           <el-button type="primary" :loading="submitting" @click="submitForm">创建阿姨档案</el-button>
         </div>
       </el-form>
@@ -185,12 +229,14 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
+import { Warning } from "@element-plus/icons-vue";
 import type { FormInstance, FormRules } from "element-plus";
 import { createWorkerApi } from "@/api/modules/business";
 import ImageUploader from "./components/ImageUploader.vue";
+import { useCascaderAreaData } from "@vant/area-data";
 
 interface ExperienceItem {
   start_date: string;
@@ -209,10 +255,12 @@ interface WorkerFormState {
   wechat: string;
   emergency_contact: string;
   emergency_phone: string;
-  address: string;
+  address_codes: string[];
+  address_detail: string;
+  service_area_codes: string[][];
   skillsText: string;
   jobTypesText: string;
-  serviceAreasText: string;
+  serviceAreasText: string; // 保留兼容性
   introduction: string;
   recommendedReasonsText: string;
   internal_remark: string;
@@ -254,7 +302,9 @@ const createDefaultForm = (): WorkerFormState => ({
   wechat: "",
   emergency_contact: "",
   emergency_phone: "",
-  address: "",
+  address_codes: [],
+  address_detail: "",
+  service_area_codes: [],
   skillsText: "",
   jobTypesText: "",
   serviceAreasText: "",
@@ -280,6 +330,72 @@ const createDefaultForm = (): WorkerFormState => ({
 
 const form = reactive<WorkerFormState>(createDefaultForm());
 
+// ==================== 暂存功能 ====================
+const DRAFT_KEY = 'worker_draft';
+
+const hasDraft = ref(false);
+
+// 检查是否有暂存数据
+const checkDraft = () => {
+  hasDraft.value = !!localStorage.getItem(DRAFT_KEY);
+};
+
+// 暂存表单
+const saveDraft = () => {
+  try {
+    // 排除头像和证件图片（base64太大）
+    const draftData = {
+      ...form,
+      avatar_url: '',
+      id_card_front: '',
+      id_card_back: '',
+      health_certificate: '',
+      health_report: '',
+      practice_certificate: '',
+      other_certificate_1: '',
+      other_certificate_2: '',
+      other_certificate_3: ''
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+    hasDraft.value = true;
+    ElMessage.success("已暂存，下次打开可继续填写");
+  } catch (e) {
+    ElMessage.error("暂存失败，可能是数据过大");
+  }
+};
+
+// 加载暂存数据
+const loadDraft = () => {
+  try {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+      const draft = JSON.parse(saved);
+      Object.assign(form, draft);
+      ElMessage.success("已恢复暂存数据");
+    }
+  } catch (e) {
+    ElMessage.error("恢复暂存数据失败");
+  }
+};
+
+// 清除暂存
+const clearDraft = () => {
+  localStorage.removeItem(DRAFT_KEY);
+  hasDraft.value = false;
+};
+
+// 使用 @vant/area-data 的省市区数据 (useCascaderAreaData 返回适合 el-cascader 的格式)
+const regionOptions = useCascaderAreaData();
+
+// 级联选择器配置
+const cascaderProps = {
+  value: 'value',
+  label: 'text',  // @vant/area-data 使用 text 而不是 label
+  children: 'children',
+  checkStrictly: false,
+  emitPath: true
+};
+
 const rules: FormRules<WorkerFormState> = {
   real_name: [{ required: true, message: "请输入真实姓名", trigger: "blur" }],
   phone: [{ required: true, message: "请输入手机号", trigger: "blur" }],
@@ -287,7 +403,9 @@ const rules: FormRules<WorkerFormState> = {
   gender: [{ required: true, message: "请选择性别", trigger: "change" }],
   age: [{ required: true, message: "请输入年龄", trigger: "change" }],
   experience_years: [{ required: true, message: "请输入从业年限", trigger: "change" }],
-  address: [{ required: true, message: "请输入居住地址", trigger: "blur" }],
+  address_codes: [{ required: true, message: "请选择居住地址", trigger: "change" }],
+  address_detail: [{ required: true, message: "请输入详细地址", trigger: "blur" }],
+  service_area_codes: [{ required: true, message: "请选择可接单区域", trigger: "change" }],
   skillsText: [{ required: true, message: "请至少输入一项技能", trigger: "blur" }],
   introduction: [{ required: true, message: "请输入个人简介", trigger: "blur" }],
   id_card_front: [{ required: true, message: "请上传身份证人像面", trigger: "change" }],
@@ -302,19 +420,26 @@ const splitCommaText = (value: string) =>
 
 const resetForm = () => {
   Object.assign(form, createDefaultForm());
+  clearDraft();
   formRef.value?.clearValidate();
 };
 
 const addExperience = () => {
-  form.work_experiences.push(createExperience());
+  if (form && form.work_experiences) {
+    form.work_experiences.push(createExperience());
+  }
 };
 
 const removeExperience = (index: number) => {
-  form.work_experiences.splice(index, 1);
+  if (form && form.work_experiences) {
+    form.work_experiences.splice(index, 1);
+  }
 };
 
-const buildExperiencePayload = () =>
-  form.work_experiences
+const buildExperiencePayload = () => {
+  if (!form || !form.work_experiences) return [];
+  
+  return form.work_experiences
     .map((item, index) => ({
       start_date: item.start_date || null,
       end_date: item.end_date || null,
@@ -323,6 +448,7 @@ const buildExperiencePayload = () =>
       sort_order: index
     }))
     .filter(item => item.job_content);
+};
 
 const submitForm = async () => {
   const valid = await formRef.value?.validate().catch(() => false);
@@ -330,44 +456,79 @@ const submitForm = async () => {
 
   submitting.value = true;
   try {
+    // 构建完整地址
+    const getRegionName = (codes: string[]) => {
+      if (!codes || codes.length === 0) return '';
+      let names: string[] = [];
+      let current = regionOptions;
+      
+      for (const code of codes) {
+        const found = current.find(item => item.value === code);
+        if (found) {
+          names.push(found.text);  // @vant/area-data 使用 text
+          current = found.children || [];
+        }
+      }
+      return names.join('');
+    };
+
+    // 构建服务区域名称
+    // service_area_codes 可能是 string[][] (多选) 或 string[] (单选)
+    const getServiceAreaNames = (codes: any) => {
+      if (!codes || !Array.isArray(codes)) return [];
+      // 如果是单选（每个元素是字符串），转换为嵌套数组
+      const codeArrays: string[][] = codes.length > 0 && typeof codes[0] === "string"
+        ? [codes as string[]]
+        : codes as string[][];
+      return codeArrays.map(codeArray => getRegionName(codeArray)).filter(Boolean);
+    };
+
     await createWorkerApi({
-      real_name: form.real_name,
-      phone: form.phone,
-      id_card: form.id_card,
-      gender: form.gender,
-      age: form.age,
-      experience_years: form.experience_years,
-      wechat: form.wechat,
-      emergency_contact: form.emergency_contact,
-      emergency_phone: form.emergency_phone,
-      address: form.address,
-      skills: splitCommaText(form.skillsText),
-      job_types: splitCommaText(form.jobTypesText),
-      service_areas: splitCommaText(form.serviceAreasText),
-      introduction: form.introduction,
-      recommended_reasons: splitCommaText(form.recommendedReasonsText),
+      real_name: form?.real_name || '',
+      phone: form?.phone || '',
+      id_card: form?.id_card || '',
+      gender: form?.gender || 'female',
+      age: form?.age || 30,
+      experience_years: form?.experience_years || 1,
+      wechat: form?.wechat || '',
+      emergency_contact: form?.emergency_contact || '',
+      emergency_phone: form?.emergency_phone || '',
+      address: `${getRegionName(form?.address_codes || [])}${form?.address_detail || ''}`,
+      address_codes: form?.address_codes || [],
+      address_detail: form?.address_detail || '',
+      skills: splitCommaText(form?.skillsText || ''),
+      job_types: splitCommaText(form?.jobTypesText || ''),
+      service_areas: getServiceAreaNames(form?.service_area_codes || []),
+      service_area_codes: form?.service_area_codes || [],
+      introduction: form?.introduction || '',
+      recommended_reasons: splitCommaText(form?.recommendedReasonsText || ''),
       work_experiences: buildExperiencePayload(),
-      internal_remark: form.internal_remark,
-      expected_salary: form.expected_salary,
-      current_status: form.current_status,
-      avatar_url: form.avatar_url || undefined,
-      id_card_front: form.id_card_front,
-      id_card_back: form.id_card_back,
-      health_certificate: form.health_certificate || undefined,
-      health_report: form.health_report || undefined,
-      practice_certificate: form.practice_certificate || undefined,
-      other_certificates: [form.other_certificate_1, form.other_certificate_2, form.other_certificate_3].filter(Boolean),
-      is_available: form.is_available,
-      is_recommended: form.is_recommended,
-      can_drive: form.can_drive
+      internal_remark: form?.internal_remark || '',
+      expected_salary: form?.expected_salary,
+      current_status: form?.current_status || 'available',
+      avatar_url: form?.avatar_url || undefined,
+      id_card_front: form?.id_card_front || '',
+      id_card_back: form?.id_card_back || '',
+      health_certificate: form?.health_certificate || undefined,
+      health_report: form?.health_report || undefined,
+      practice_certificate: form?.practice_certificate || undefined,
+      other_certificates: [form?.other_certificate_1, form?.other_certificate_2, form?.other_certificate_3].filter(Boolean),
+      is_available: form?.is_available || false,
+      is_recommended: form?.is_recommended || false,
+      can_drive: form?.can_drive || false
     });
 
+    clearDraft(); // 提交成功后清除暂存
     ElMessage.success("阿姨档案创建成功");
     router.push("/worker/list");
   } finally {
     submitting.value = false;
   }
 };
+
+onMounted(() => {
+  checkDraft();
+});
 </script>
 
 <style scoped lang="scss">
@@ -384,9 +545,24 @@ const submitForm = async () => {
 
 .header-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.draft-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--el-color-warning);
+  font-size: 13px;
+  margin-top: 8px;
 }
 
 .worker-form {
@@ -408,8 +584,61 @@ const submitForm = async () => {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.upload-grid,
+.certificate-grid {
+  display: grid;
+  gap: 16px;
+}
+
 .upload-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.certificate-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.upload-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.upload-section .section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.upload-section .section-head h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.upload-section .section-head p {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.avatar-upload {
+  max-width: 200px;
+}
+
+.avatar-upload .image-uploader {
+  width: 100%;
+}
+
+.avatar-upload .preview,
+.avatar-upload .empty {
+  width: 100%;
+  height: 150px;
+  border-radius: 12px;
 }
 
 .switch-row {
@@ -481,6 +710,10 @@ const submitForm = async () => {
   .switch-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  
+  .certificate-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
@@ -488,11 +721,22 @@ const submitForm = async () => {
   .grid.three,
   .grid.four,
   .upload-grid,
+  .certificate-grid,
   .switch-row,
-  .section-head {
+  .section-head,
+  .upload-section .section-head {
     grid-template-columns: 1fr;
     flex-direction: column;
     align-items: flex-start;
+  }
+  
+  .avatar-upload {
+    max-width: 100%;
+  }
+  
+  .avatar-upload .preview,
+  .avatar-upload .empty {
+    height: 120px;
   }
 }
 </style>

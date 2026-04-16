@@ -2,7 +2,9 @@
   "pages": [
     "pages/index/index",
     "pages/detail/index",
-    "pages/logs/logs"
+    "pages/logs/logs",
+    "pages/privacy/index",
+    "pages/agreement/index"
   ],
   "window": {
     "navigationBarTextStyle": "black",

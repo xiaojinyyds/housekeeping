@@ -102,6 +102,7 @@ class WorkerProfile(Base):
     recommended_reasons = Column(JSON)
     internal_remark = Column(Text)
     service_areas = Column(JSON)
+    service_area_codes = Column(JSON)
     hourly_rate = Column(DECIMAL(10, 2))
     expected_salary = Column(DECIMAL(10, 2))
     rating = Column(DECIMAL(3, 2), default=5.00)
@@ -143,6 +144,7 @@ class WorkerProfile(Base):
             "recommended_reasons": self.recommended_reasons,
             "internal_remark": self.internal_remark,
             "service_areas": self.service_areas,
+            "service_area_codes": self.service_area_codes,
             "hourly_rate": float(self.hourly_rate) if self.hourly_rate else None,
             "expected_salary": float(self.expected_salary) if self.expected_salary else None,
             "rating": float(self.rating) if self.rating else 5.0,

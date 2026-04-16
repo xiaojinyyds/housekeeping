@@ -55,6 +55,7 @@ Page({
     serviceAreaInput: "",
     jobTypeOptions: JOB_TYPE_OPTIONS,
     jobTypeIndex: 0,
+    showPrivacyModal: false,
     filters: {
       is_available: undefined,
       is_recommended: undefined,
@@ -67,6 +68,27 @@ Page({
   onLoad() {
     this.enableShareMenus();
     this.fetchWorkers();
+    // 检查是否需要显示隐私弹窗
+    const app = getApp();
+    if (app.globalData.showPrivacyModal) {
+      this.setData({ showPrivacyModal: true });
+    }
+  },
+
+  onPrivacyAgree() {
+    wx.setStorageSync('privacyAgreed', true);
+    const app = getApp();
+    app.globalData.showPrivacyModal = false;
+    this.setData({ showPrivacyModal: false });
+  },
+
+  onPrivacyDisagree() {
+    this.setData({ showPrivacyModal: false });
+    wx.showToast({
+      title: '需要同意隐私政策才能使用',
+      icon: 'none',
+      duration: 2000
+    });
   },
 
   enableShareMenus() {

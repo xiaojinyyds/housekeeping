@@ -92,10 +92,10 @@ def parse_datetime_safe(value: Optional[str]):
 
 # ==================== 导出接口 ====================
 
-@router.get("/export/workers", summary="??????")
+@router.get("/export/workers", summary="导入阿姨")
 async def export_workers(
-    is_available: Optional[bool] = Query(None, description="?????"),
-    keyword: Optional[str] = Query(None, description="??????/???/????"),
+    is_available: Optional[bool] = Query(None, description="是否可接单"),
+    keyword: Optional[str] = Query(None, description="关键词(姓名/手机/身份证)"),
     address: Optional[str] = Query(None, description="????"),
     service_area: Optional[str] = Query(None, description="????"),
     job_type: Optional[str] = Query(None, description="????"),
@@ -106,7 +106,7 @@ async def export_workers(
     db: Session = Depends(get_db)
 ):
     if user_role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="????")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作")
 
     query = db.query(WorkerProfile)
     if is_available is not None:
@@ -134,21 +134,21 @@ async def export_workers(
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "????"
+    ws.title = "阿姨档案"
     headers = [
-        "????", "????", "???", "????", "??", "??", "????", "????",
-        "????", "????", "????", "???", "????", "????", "???", "????"
+        "创建时间", "姓名", "手机号", "身份证号", "性别", "年龄", "从业年限", "接单类型",
+        "技能标签", "居住地址", "服务区域", "微信号", "期望薪资", "当前状态", "可接单", "个人简介"
     ]
     ws.append(headers)
     style_header(ws)
 
-    gender_map = {"male": "?", "female": "?"}
+    gender_map = {"male": "男", "female": "女"}
     status_map = {
-        "available": "???",
-        "on_job": "???",
-        "paused": "????",
-        "blacklisted": "???",
-        "inactive": "??"
+        "available": "可接单",
+        "on_job": "上户中",
+        "paused": "暂停",
+        "blacklisted": "黑名单",
+        "inactive": "停用"
     }
 
     for item in workers:
@@ -160,14 +160,14 @@ async def export_workers(
             gender_map.get(item.gender, item.gender or ""),
             item.age or "",
             item.experience_years or "",
-            "?".join(item.job_types or []),
-            "?".join(item.skills or []),
+            ",".join(item.job_types or []),
+            ",".join(item.skills or []),
             item.address or "",
-            "?".join(item.service_areas or []),
+            ",".join(item.service_areas or []),
             item.wechat or "",
             float(item.expected_salary) if item.expected_salary is not None else "",
             status_map.get(item.current_status, item.current_status or ""),
-            "?" if item.is_available else "?",
+            "是" if item.is_available else "否",
             item.introduction or ""
         ])
 
@@ -180,7 +180,7 @@ async def export_workers(
     wb.save(output)
     output.seek(0)
 
-    filename = f"????_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f"阿姨档案_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -669,39 +669,39 @@ async def export_statistics(
 
 # ==================== 导入模板 ====================
 
-@router.get("/import/template/workers", summary="????????")
+@router.get("/import/template/workers", summary="下载阿姨导入模板")
 async def download_worker_template(
     user_role: str = Depends(get_current_user_role)
 ):
     if user_role not in ["admin", "staff"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="????")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作")
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "??????"
+    ws.title = "阿姨档案"
 
     headers = [
-        "????*", "???*", "????*", "??*(?/?)", "??*", "????*", "????",
-        "????*", "????*", "????", "???", "????", "????", "???(?/?)", "????*"
+        "姓名*", "手机号*", "身份证号*", "性别*(男/女)", "年龄*", "从业年限*", "接单类型",
+        "技能标签*", "居住地址*", "微信号", "期望薪资", "当前状态", "可接单*(是/否)", "个人简介*"
     ]
     ws.append(headers)
     style_header(ws)
 
     ws.append([
-        "???", "13800138001", "110101199001011234", "?", 42, 8, "????,????",
-        "??,??,??", "???????", "????,???", "zhangayi", 8500,
-        "available", "?", "??????????????"
+        "张三", "13800138001", "110101199001011234", "女", 42, 8, "住家保姆,月嫂",
+        "做饭,保洁,带娃", "北京市朝阳区", "zhangyi", 8500,
+        "available", "是", "认真负责，保洁经验丰富"
     ])
 
-    ws_help = wb.create_sheet("????")
-    ws_help["A1"] = "??????"
+    ws_help = wb.create_sheet("填写说明")
+    ws_help["A1"] = "阿姨档案导入说明"
     ws_help["A1"].font = Font(bold=True, color="FF0000", size=14)
-    ws_help["A3"] = "1. ? * ???????"
-    ws_help["A4"] = "2. ???????????????????????????????"
-    ws_help["A5"] = "3. ?????????available / on_job / paused / blacklisted / inactive"
-    ws_help["A6"] = "4. ???????/????????"
-    ws_help["A7"] = "5. ???????????????????????"
-    ws_help["A8"] = "6. ?????????????????????"
+    ws_help["A3"] = "1. * 为必填项"
+    ws_help["A4"] = "2. 性别填写：男/女"
+    ws_help["A5"] = "3. 当前状态填写：available / on_job / paused / blacklisted / inactive"
+    ws_help["A6"] = "4. 接单类型/技能标签用英文逗号分隔"
+    ws_help["A7"] = "5. 可同时导入多条记录"
+    ws_help["A8"] = "6. 导入前请查看填写说明"
     ws_help.column_dimensions["A"].width = 88
 
     auto_column_width(ws)
@@ -713,7 +713,7 @@ async def download_worker_template(
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": get_content_disposition("??????.xlsx")}
+        headers={"Content-Disposition": get_content_disposition("阿姨档案导入模板.xlsx")}
     )
 
 
@@ -808,37 +808,37 @@ async def download_lead_template(
 
 # ==================== 导入接口 ====================
 
-@router.post("/import/workers", summary="??????")
+@router.post("/import/workers", summary="导入阿姨")
 async def import_workers(
-    file: UploadFile = File(..., description="Excel??"),
+    file: UploadFile = File(..., description="Excel文件"),
     current_user_id: str = Depends(get_current_user_id),
     user_role: str = Depends(get_current_user_role),
     db: Session = Depends(get_db)
 ):
     if user_role not in ["admin", "staff"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="????")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作")
 
     if not file.filename.endswith((".xlsx", ".xls")):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="??? Excel ??")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="请上传 Excel 文件")
 
     def split_multi_value(value):
         if value in [None, ""]:
             return []
-        return [item.strip() for item in str(value).replace("?", ",").split(",") if item.strip()]
+        return [item.strip() for item in str(value).replace("，", ",").split(",") if item.strip()]
 
     def parse_gender(value):
         raw = str(value or "").strip()
-        if raw in ["?", "female", "Female"]:
+        if raw in ["女", "female", "Female"]:
             return "female"
-        if raw in ["?", "male", "Male"]:
+        if raw in ["男", "male", "Male"]:
             return "male"
         return None
 
     def parse_bool(value):
         raw = str(value or "").strip()
-        if raw in ["", "?", "true", "True", "1", "???"]:
+        if raw in ["", "是", "true", "True", "1", "yes"]:
             return True
-        if raw in ["?", "false", "False", "0", "????"]:
+        if raw in ["否", "false", "False", "0", "no"]:
             return False
         return True
 
@@ -855,7 +855,7 @@ async def import_workers(
                 continue
 
             first_cell = str(row[0]).strip()
-            if first_cell.startswith("?") or first_cell.endswith("*") or first_cell == "????":
+            if first_cell.endswith("*") or first_cell == "":
                 continue
 
             try:
@@ -876,22 +876,22 @@ async def import_workers(
                 introduction = str(row[14]).strip() if len(row) > 14 and row[14] else ""
 
                 if not all([real_name, phone, id_card, gender, age is not None, experience_years is not None, address, introduction]) or not skills:
-                    results["errors"].append(f"?{row_idx}????????")
+                    results["errors"].append(f"第{row_idx}行：姓名格式错误")
                     results["failed"] += 1
                     continue
 
                 if current_status not in status_allowed:
-                    results["errors"].append(f"?{row_idx}?????????")
+                    results["errors"].append(f"第{row_idx}行：手机号格式错误")
                     results["failed"] += 1
                     continue
 
                 if db.query(User).filter(User.phone == phone).first():
-                    results["errors"].append(f"?{row_idx}????????")
+                    results["errors"].append(f"第{row_idx}行：姓名格式错误")
                     results["failed"] += 1
                     continue
 
                 if db.query(WorkerProfile).filter(WorkerProfile.id_card == id_card).first() or db.query(User).filter(User.id_card == id_card).first():
-                    results["errors"].append(f"?{row_idx}?????????")
+                    results["errors"].append(f"第{row_idx}行：手机号格式错误")
                     results["failed"] += 1
                     continue
 
@@ -940,19 +940,19 @@ async def import_workers(
                 db.add(worker)
                 results["success"] += 1
             except Exception as e:
-                results["errors"].append(f"?{row_idx}??{str(e)}")
+                results["errors"].append(f"第{row_idx}行：{str(e)}")
                 results["failed"] += 1
 
         db.commit()
         return ApiResponse.success(
             data=results,
-            message=f"??????? {results['success']} ???? {results['failed']} ?"
+            message=f"导入完成：成功{results['success']}条，失败{results['failed']}条"
         )
     except Exception as e:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"????: {str(e)}"
+            detail=f"导入失败: {str(e)}"
         )
 
 

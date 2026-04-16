@@ -131,6 +131,29 @@
       </view>
     </view>
 
+    <!-- 隐私授权弹窗 -->
+    <view class="modal-mask" wx:if="{{showPrivacyModal}}" bindtap="hidePrivacyModal"></view>
+    <view class="privacy-modal {{showPrivacyModal ? 'modal-show' : ''}}">
+      <view class="privacy-title">隐私授权提示</view>
+      <view class="privacy-content">
+        <view class="privacy-desc">在您提交留言前，我们需要收集您的手机号码用于：</view>
+        <view class="privacy-item">1. 与您联系确认预约详情</view>
+        <view class="privacy-item">2. 推送服务进度通知</view>
+        <view class="privacy-desc">您的信息将按照以下协议予以保护，不对外泄露。</view>
+        <view class="privacy-agreement">
+          <text class="normal-text">在使用我们的服务前，请您仔细阅读并同意</text>
+          <text class="link-text" style="color:#576b95;" bindtap="goToPrivacy">《隐私政策》</text>
+          <text class="normal-text">和</text>
+          <text class="link-text" style="color:#576b95;" bindtap="goToAgreement">《用户服务协议》</text>
+          <text class="normal-text">。点击"同意"即表示您已阅读并同意上述协议。</text>
+        </view>
+      </view>
+      <view class="privacy-btns">
+        <view class="btn-cancel" bindtap="hidePrivacyModal">取消</view>
+        <view class="btn-agree" bindtap="agreePrivacy">同意</view>
+      </view>
+    </view>
+
     <view class="modal-mask" wx:if="{{showModal}}" bindtap="hideBookModal"></view>
     <view class="modal-content {{showModal ? 'modal-show' : ''}}">
       <view class="modal-header">
