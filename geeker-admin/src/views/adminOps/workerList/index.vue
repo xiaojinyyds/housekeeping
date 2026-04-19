@@ -59,7 +59,7 @@
     <div class="card table-card">
       <el-table :data="rows" v-loading="loading">
         <el-table-column prop="created_at" label="新建日期" min-width="170">
-          <template #default="{ row }">{{ row.created_at || "-" }}</template>
+          <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
         </el-table-column>
         <el-table-column prop="real_name" label="姓名" min-width="120" />
         <el-table-column prop="phone" label="手机号" min-width="140" />
@@ -144,6 +144,7 @@ import {
   updateWorkerRecommendApi
 } from "@/api/modules/business";
 import { useUserStore } from "@/stores/modules/user";
+import { formatDate } from "@/utils";
 
 const router = useRouter();
 const userStore = useUserStore();

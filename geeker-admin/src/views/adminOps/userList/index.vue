@@ -38,7 +38,7 @@
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" min-width="180" />
         <el-table-column prop="last_login_at" label="最近登录" min-width="180">
-          <template #default="{ row }">{{ row.last_login_at || "-" }}</template>
+          <template #default="{ row }">{{ formatDate(row.last_login_at) }}</template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="240">
           <template #default="{ row }">
@@ -69,6 +69,7 @@
 import { onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getUsersApi, resetUserPasswordApi, updateUserStatusApi } from "@/api/modules/business";
+import { formatDate } from "@/utils";
 
 const loading = ref(false);
 const rows = ref<any[]>([]);

@@ -314,15 +314,12 @@ const cascaderProps = {
 const rules: FormRules<WorkerEditFormState> = {
   real_name: [{ required: true, message: "请输入真实姓名", trigger: "blur" }],
   phone: [{ required: true, message: "请输入手机号", trigger: "blur" }],
-  id_card: [{ required: true, message: "请输入身份证号", trigger: "blur" }],
   gender: [{ required: true, message: "请选择性别", trigger: "change" }],
   age: [{ required: true, message: "请输入年龄", trigger: "change" }],
   experience_years: [{ required: true, message: "请输入从业年限", trigger: "change" }],
   address: [{ required: true, message: "请输入居住地址", trigger: "blur" }],
   skillsText: [{ required: true, message: "请至少输入一项技能", trigger: "blur" }],
-  introduction: [{ required: true, message: "请输入个人简介", trigger: "blur" }],
-  id_card_front: [{ required: true, message: "请上传身份证人像面", trigger: "change" }],
-  id_card_back: [{ required: true, message: "请上传身份证国徽面", trigger: "change" }]
+  introduction: [{ required: true, message: "请输入个人简介", trigger: "blur" }]
 };
 
 const splitCommaText = (value: string) =>

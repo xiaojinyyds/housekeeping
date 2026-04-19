@@ -309,3 +309,14 @@ export function findItemNested(enumData: any, callValue: any, value: string, chi
     if (current[children]) return findItemNested(current[children], callValue, value, children);
   }, null);
 }
+
+/**
+ * @description 格式化日期，移除 ISO 格式中的 T
+ * @param dateStr 日期字符串
+ * @returns 格式化后的日期字符串
+ */
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "-";
+  // 兼容 ISO 格式 (2024-01-15T10:30:00) 和普通格式 (2024-01-15 10:30:00)
+  return dateStr.replace("T", " ").slice(0, 16);
+}

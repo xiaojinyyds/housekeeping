@@ -35,7 +35,7 @@
           <template #default="{ row }">{{ row.handling_remark || "-" }}</template>
         </el-table-column>
         <el-table-column prop="created_at" label="留言时间" min-width="170">
-          <template #default="{ row }">{{ row.created_at?.replace("T", " ")?.slice(0, 16) || "-" }}</template>
+          <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="120">
           <template #default="{ row }">
@@ -87,6 +87,7 @@
 import { onActivated, onMounted, ref, reactive } from "vue";
 import { getGuestLeadsApi, updateGuestLeadStatusApi } from "@/api/modules/business";
 import { ElMessage } from "element-plus";
+import { formatDate } from "@/utils";
 
 const loading = ref(false);
 const rows = ref<any[]>([]);

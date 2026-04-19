@@ -680,29 +680,20 @@ async def download_worker_template(
     ws = wb.active
     ws.title = "阿姨档案"
 
-    headers = [
-        "姓名*", "手机号*", "身份证号*", "性别*(男/女)", "年龄*", "从业年限*", "接单类型",
-        "技能标签*", "居住地址*", "微信号", "期望薪资", "当前状态", "可接单*(是/否)", "个人简介*"
-    ]
+    headers = ["姓名*", "手机号*"]
     ws.append(headers)
     style_header(ws)
 
-    ws.append([
-        "张三", "13800138001", "110101199001011234", "女", 42, 8, "住家保姆,月嫂",
-        "做饭,保洁,带娃", "北京市朝阳区", "zhangyi", 8500,
-        "available", "是", "认真负责，保洁经验丰富"
-    ])
+    ws.append(["张三", "13800138001"])
 
     ws_help = wb.create_sheet("填写说明")
     ws_help["A1"] = "阿姨档案导入说明"
     ws_help["A1"].font = Font(bold=True, color="FF0000", size=14)
-    ws_help["A3"] = "1. * 为必填项"
-    ws_help["A4"] = "2. 性别填写：男/女"
-    ws_help["A5"] = "3. 当前状态填写：available / on_job / paused / blacklisted / inactive"
-    ws_help["A6"] = "4. 接单类型/技能标签用英文逗号分隔"
-    ws_help["A7"] = "5. 可同时导入多条记录"
-    ws_help["A8"] = "6. 导入前请查看填写说明"
-    ws_help.column_dimensions["A"].width = 88
+    ws_help["A3"] = "1. * 为必填项（仅姓名和手机号）"
+    ws_help["A4"] = "2. 导入后可在阿姨详情页编辑其他信息"
+    ws_help["A5"] = "3. 可同时导入多条记录"
+    ws_help["A6"] = "4. 手机号不能与已有用户重复"
+    ws_help.column_dimensions["A"].width = 60
 
     auto_column_width(ws)
 
@@ -861,48 +852,29 @@ async def import_workers(
             try:
                 real_name = first_cell
                 phone = str(row[1]).strip() if len(row) > 1 and row[1] else ""
-                id_card = str(row[2]).strip() if len(row) > 2 and row[2] else ""
-                gender = parse_gender(row[3] if len(row) > 3 else "")
-                age = int(row[4]) if len(row) > 4 and row[4] not in [None, ""] else None
-                experience_years = int(row[5]) if len(row) > 5 and row[5] not in [None, ""] else None
-                job_types = split_multi_value(row[6] if len(row) > 6 else "")
-                skills = split_multi_value(row[7] if len(row) > 7 else "")
-                address = str(row[8]).strip() if len(row) > 8 and row[8] else ""
-                service_areas = split_multi_value(row[9] if len(row) > 9 else "")
-                wechat = str(row[10]).strip() if len(row) > 10 and row[10] else ""
-                expected_salary = float(row[11]) if len(row) > 11 and row[11] not in [None, ""] else None
-                current_status = str(row[12]).strip() if len(row) > 12 and row[12] else "available"
-                is_available = parse_bool(row[13] if len(row) > 13 else "")
-                introduction = str(row[14]).strip() if len(row) > 14 and row[14] else ""
 
-                if not all([real_name, phone, id_card, gender, age is not None, experience_years is not None, address, introduction]) or not skills:
-                    results["errors"].append(f"第{row_idx}行：姓名格式错误")
+                if not real_name:
+                    results["errors"].append(f"第{row_idx}行：姓名为空")
                     results["failed"] += 1
                     continue
 
-                if current_status not in status_allowed:
-                    results["errors"].append(f"第{row_idx}行：手机号格式错误")
+                if not phone:
+                    results["errors"].append(f"第{row_idx}行：手机号为空")
                     results["failed"] += 1
                     continue
 
                 if db.query(User).filter(User.phone == phone).first():
-                    results["errors"].append(f"第{row_idx}行：姓名格式错误")
+                    results["errors"].append(f"第{row_idx}行：手机号已存在")
                     results["failed"] += 1
                     continue
 
-                if db.query(WorkerProfile).filter(WorkerProfile.id_card == id_card).first() or db.query(User).filter(User.id_card == id_card).first():
-                    results["errors"].append(f"第{row_idx}行：手机号格式错误")
-                    results["failed"] += 1
-                    continue
-
-                login_email = f"{id_card}@worker.local"
+                login_email = f"worker_{generate_uuid()[:8]}@worker.local"
                 while db.query(User).filter(User.email == login_email).first():
-                    login_email = f"{id_card}_{generate_uuid()[:6]}@worker.local"
+                    login_email = f"worker_{generate_uuid()[:8]}@worker.local"
 
                 user = User(
                     id=generate_uuid(),
                     email=login_email,
-                    id_card=id_card,
                     phone=phone,
                     password_hash=get_password_hash(generate_uuid()),
                     nickname=real_name,
@@ -919,19 +891,10 @@ async def import_workers(
                     recorder_staff_id=current_user_id,
                     real_name=real_name,
                     phone=phone,
-                    id_card=id_card,
-                    gender=gender,
-                    age=age,
-                    wechat=wechat or None,
-                    address=address,
-                    experience_years=experience_years,
-                    skills=skills,
-                    job_types=job_types,
-                    service_areas=service_areas,
-                    expected_salary=expected_salary,
-                    introduction=introduction,
-                    current_status=current_status,
-                    is_available=is_available,
+                    id_card=None,  # 导入时待补充
+                    gender="female",
+                    current_status="available",
+                    is_available=True,
                     is_recommended=False,
                     rating=5.0,
                     total_orders=0,

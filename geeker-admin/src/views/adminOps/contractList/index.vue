@@ -103,7 +103,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="latest_follow_up_at" label="最近回访" min-width="180">
-          <template #default="{ row }">{{ row.latest_follow_up_at || "-" }}</template>
+          <template #default="{ row }">{{ formatDate(row.latest_follow_up_at) }}</template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="180">
           <template #default="{ row }">
@@ -141,6 +141,7 @@ import {
   importContractsApi
 } from "@/api/modules/business";
 import { useUserStore } from "@/stores/modules/user";
+import { formatDate } from "@/utils";
 
 const router = useRouter();
 const userStore = useUserStore();

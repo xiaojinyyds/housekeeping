@@ -242,15 +242,20 @@ async def get_workers_admin(
     min_age: Optional[int] = Query(None, ge=0, description="????"),
     max_age: Optional[int] = Query(None, ge=0, description="????"),
     user_role: str = Depends(get_current_user_role),
+    current_user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
-    if user_role != "admin":
+    if user_role not in ["admin", "staff"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="无权操作"
         )
 
     query = db.query(WorkerProfile)
+
+    # 员工只能看自己录入的阿姨
+    if user_role == "staff":
+        query = query.filter(WorkerProfile.recorder_staff_id == current_user_id)
 
     if is_available is not None:
         query = query.filter(WorkerProfile.is_available == is_available)

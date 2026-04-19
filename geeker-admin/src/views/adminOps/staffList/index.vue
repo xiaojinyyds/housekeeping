@@ -44,7 +44,7 @@
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" min-width="180" />
         <el-table-column prop="last_login_at" label="最近登录" min-width="180">
-          <template #default="{ row }">{{ row.last_login_at || "-" }}</template>
+          <template #default="{ row }">{{ formatDate(row.last_login_at) }}</template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="320">
           <template #default="{ row }">
@@ -78,6 +78,7 @@ import { onActivated, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getUsersApi, resetUserPasswordApi, updateUserStatusApi } from "@/api/modules/business";
+import { formatDate } from "@/utils";
 
 const router = useRouter();
 const loading = ref(false);

@@ -59,17 +59,8 @@
         </div>
 
         <div class="grid three">
-          <el-form-item label="可接单区域" prop="service_area_codes">
-            <el-cascader
-              v-model="form.service_area_codes"
-              :options="regionOptions"
-              :props="cascaderProps"
-              placeholder="请选择可接单区域"
-              clearable
-              filterable
-              multiple
-              class="full-width"
-            />
+          <el-form-item label="可接单区域">
+            <el-input v-model="form.serviceAreasText" placeholder="请输入可接单区域，如：上海、北京、深圳" />
           </el-form-item>
           <el-form-item label="接单类型">
             <el-input v-model="form.jobTypesText" placeholder="多个类型请用逗号分隔，如：住家保姆,月嫂" />
@@ -257,7 +248,7 @@ interface WorkerFormState {
   emergency_phone: string;
   address_codes: string[];
   address_detail: string;
-  service_area_codes: string[][];
+  service_area_codes: string;
   skillsText: string;
   jobTypesText: string;
   serviceAreasText: string; // 保留兼容性
@@ -304,7 +295,7 @@ const createDefaultForm = (): WorkerFormState => ({
   emergency_phone: "",
   address_codes: [],
   address_detail: "",
-  service_area_codes: [],
+  service_area_codes: "",
   skillsText: "",
   jobTypesText: "",
   serviceAreasText: "",
@@ -399,17 +390,13 @@ const cascaderProps = {
 const rules: FormRules<WorkerFormState> = {
   real_name: [{ required: true, message: "请输入真实姓名", trigger: "blur" }],
   phone: [{ required: true, message: "请输入手机号", trigger: "blur" }],
-  id_card: [{ required: true, message: "请输入身份证号", trigger: "blur" }],
   gender: [{ required: true, message: "请选择性别", trigger: "change" }],
   age: [{ required: true, message: "请输入年龄", trigger: "change" }],
   experience_years: [{ required: true, message: "请输入从业年限", trigger: "change" }],
   address_codes: [{ required: true, message: "请选择居住地址", trigger: "change" }],
   address_detail: [{ required: true, message: "请输入详细地址", trigger: "blur" }],
-  service_area_codes: [{ required: true, message: "请选择可接单区域", trigger: "change" }],
   skillsText: [{ required: true, message: "请至少输入一项技能", trigger: "blur" }],
-  introduction: [{ required: true, message: "请输入个人简介", trigger: "blur" }],
-  id_card_front: [{ required: true, message: "请上传身份证人像面", trigger: "change" }],
-  id_card_back: [{ required: true, message: "请上传身份证国徽面", trigger: "change" }]
+  introduction: [{ required: true, message: "请输入个人简介", trigger: "blur" }]
 };
 
 const splitCommaText = (value: string) =>
@@ -472,15 +459,10 @@ const submitForm = async () => {
       return names.join('');
     };
 
-    // 构建服务区域名称
-    // service_area_codes 可能是 string[][] (多选) 或 string[] (单选)
-    const getServiceAreaNames = (codes: any) => {
-      if (!codes || !Array.isArray(codes)) return [];
-      // 如果是单选（每个元素是字符串），转换为嵌套数组
-      const codeArrays: string[][] = codes.length > 0 && typeof codes[0] === "string"
-        ? [codes as string[]]
-        : codes as string[][];
-      return codeArrays.map(codeArray => getRegionName(codeArray)).filter(Boolean);
+    // 构建服务区域名称（从文本输入）
+    const getServiceAreaNames = (text: string) => {
+      if (!text) return [];
+      return splitCommaText(text);
     };
 
     await createWorkerApi({
@@ -498,8 +480,7 @@ const submitForm = async () => {
       address_detail: form?.address_detail || '',
       skills: splitCommaText(form?.skillsText || ''),
       job_types: splitCommaText(form?.jobTypesText || ''),
-      service_areas: getServiceAreaNames(form?.service_area_codes || []),
-      service_area_codes: form?.service_area_codes || [],
+      service_areas: getServiceAreaNames(form?.serviceAreasText || ''),
       introduction: form?.introduction || '',
       recommended_reasons: splitCommaText(form?.recommendedReasonsText || ''),
       work_experiences: buildExperiencePayload(),

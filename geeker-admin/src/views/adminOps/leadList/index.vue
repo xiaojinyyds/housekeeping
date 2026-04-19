@@ -80,7 +80,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="latest_follow_up_at" label="最近跟进" min-width="180">
-          <template #default="{ row }">{{ row.latest_follow_up_at || "-" }}</template>
+          <template #default="{ row }">{{ formatDate(row.latest_follow_up_at) }}</template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" width="260">
           <template #default="{ row }">
@@ -112,6 +112,7 @@ import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { downloadLeadTemplateApi, exportLeadsApi, getLeadListApi, getUsersApi, importLeadsApi } from "@/api/modules/business";
 import { useUserStore } from "@/stores/modules/user";
+import { formatDate } from "@/utils";
 
 const router = useRouter();
 const userStore = useUserStore();
