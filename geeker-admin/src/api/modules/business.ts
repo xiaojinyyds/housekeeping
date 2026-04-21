@@ -170,6 +170,15 @@ export const updateUserStatusApi = (userId: string, status: string) =>
 export const resetUserPasswordApi = (userId: string, newPassword: string) =>
   http.post(`/api/v1/admin/users/${userId}/reset-password`, { new_password: newPassword });
 
+export const deleteUserApi = (userId: string) =>
+  http.delete(`/api/v1/admin/users/${userId}`);
+
+export const deleteWorkerApi = (workerId: string) =>
+  http.delete(`/api/v1/admin/workers/${workerId}`);
+
+export const deleteStaffApi = (staffId: string) =>
+  http.delete(`/api/v1/admin/staffs/${staffId}`);
+
 export const getGuestLeadsApi = (params: PageParams & { status?: string; customer_name?: string; customer_phone?: string }) =>
   http.get("/api/v1/appointment/guest-leads", params);
 

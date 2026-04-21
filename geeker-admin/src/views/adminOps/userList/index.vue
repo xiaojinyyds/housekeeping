@@ -40,13 +40,14 @@
         <el-table-column prop="last_login_at" label="最近登录" min-width="180">
           <template #default="{ row }">{{ formatDate(row.last_login_at) }}</template>
         </el-table-column>
-        <el-table-column label="操作" fixed="right" width="240">
+<el-table-column label="操作" fixed="right" width="300">
           <template #default="{ row }">
             <el-space>
               <el-button type="primary" link @click="toggleStatus(row)">
                 {{ row.status === "active" ? "禁用" : "启用" }}
               </el-button>
               <el-button type="warning" link @click="resetPassword(row)">重置密码</el-button>
+              <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
             </el-space>
           </template>
         </el-table-column>
@@ -68,7 +69,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getUsersApi, resetUserPasswordApi, updateUserStatusApi } from "@/api/modules/business";
+import { getUsersApi, resetUserPasswordApi, updateUserStatusApi, deleteUserApi } from "@/api/modules/business";
 import { formatDate } from "@/utils";
 
 const loading = ref(false);
@@ -128,6 +129,23 @@ const resetPassword = async (row: any) => {
   });
   await resetUserPasswordApi(row.id, value);
   ElMessage.success("密码已重置");
+};
+
+const handleDelete = async (row: any) => {
+  try {
+    await ElMessageBox.confirm("确定要删除该用户吗？此操作不可恢复。", "删除确认", {
+      confirmButtonText: "删除",
+      cancelButtonText: "取消",
+      type: "warning"
+    });
+    await deleteUserApi(row.id);
+    ElMessage.success("删除成功");
+    loadUsers();
+  } catch (e) {
+    if (e !== "cancel") {
+      console.error(e);
+    }
+  }
 };
 
 onMounted(loadUsers);

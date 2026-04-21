@@ -502,6 +502,8 @@ const submitForm = async () => {
     clearDraft(); // 提交成功后清除暂存
     ElMessage.success("阿姨档案创建成功");
     router.push("/worker/list");
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.detail || e?.message || "创建失败");
   } finally {
     submitting.value = false;
   }

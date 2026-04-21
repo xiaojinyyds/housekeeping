@@ -114,6 +114,8 @@ const submitForm = async () => {
     });
     ElMessage.success("员工账号创建成功");
     resetForm();
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.detail || e?.message || "创建失败");
   } finally {
     submitting.value = false;
   }

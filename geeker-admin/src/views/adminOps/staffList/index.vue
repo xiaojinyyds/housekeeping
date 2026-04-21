@@ -55,6 +55,7 @@
                 {{ row.status === "active" ? "设为禁用" : "设为启用" }}
               </el-button>
               <el-button type="warning" link @click="resetPassword(row)">重置密码</el-button>
+              <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
             </el-space>
           </template>
         </el-table-column>
@@ -77,7 +78,7 @@
 import { onActivated, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { getUsersApi, resetUserPasswordApi, updateUserStatusApi } from "@/api/modules/business";
+import { getUsersApi, resetUserPasswordApi, updateUserStatusApi, deleteStaffApi } from "@/api/modules/business";
 import { formatDate } from "@/utils";
 
 const router = useRouter();
@@ -124,6 +125,23 @@ const resetPassword = async (row: any) => {
   });
   await resetUserPasswordApi(row.id, value);
   ElMessage.success("密码重置成功");
+};
+
+const handleDelete = async (row: any) => {
+  try {
+    await ElMessageBox.confirm("确定要删除该员工账号吗？此操作不可恢复。", "删除确认", {
+      confirmButtonText: "删除",
+      cancelButtonText: "取消",
+      type: "warning"
+    });
+    await deleteStaffApi(row.id);
+    ElMessage.success("删除成功");
+    loadStaff();
+  } catch (e) {
+    if (e !== "cancel") {
+      console.error(e);
+    }
+  }
 };
 
 onMounted(loadStaff);

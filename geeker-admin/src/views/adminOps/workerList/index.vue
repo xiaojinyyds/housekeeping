@@ -113,6 +113,7 @@
               <el-button type="warning" link @click="toggleRecommend(row)">
                 {{ row.is_recommended ? "取消推荐" : "设为推荐" }}
               </el-button>
+              <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
             </el-space>
           </template>
         </el-table-column>
@@ -134,14 +135,15 @@
 <script setup lang="ts">
 import { onActivated, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
   downloadWorkerTemplateApi,
   exportWorkersApi,
   getWorkersApi,
   importWorkersApi,
   updateWorkerAvailableApi,
-  updateWorkerRecommendApi
+  updateWorkerRecommendApi,
+  deleteWorkerApi
 } from "@/api/modules/business";
 import { useUserStore } from "@/stores/modules/user";
 import { formatDate } from "@/utils";
@@ -235,6 +237,23 @@ const toggleAvailable = async (row: any) => {
   await updateWorkerAvailableApi(row.id, !row.is_available);
   row.is_available = !row.is_available;
   ElMessage.success(row.is_available ? "已开启接单" : "已暂停接单");
+};
+
+const handleDelete = async (row: any) => {
+  try {
+    await ElMessageBox.confirm("确定要删除该阿姨档案吗？此操作不可恢复。", "删除确认", {
+      confirmButtonText: "删除",
+      cancelButtonText: "取消",
+      type: "warning"
+    });
+    await deleteWorkerApi(row.id);
+    ElMessage.success("删除成功");
+    loadWorkers();
+  } catch (e) {
+    if (e !== "cancel") {
+      console.error(e);
+    }
+  }
 };
 
 const toggleRecommend = async (row: any) => {

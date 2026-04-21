@@ -1216,3 +1216,99 @@ async def update_worker(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"操作失败: {str(e)}"
         )
+
+
+@router.delete("/workers/{worker_id}", summary="删除阿姨档案")
+async def delete_worker(
+    worker_id: str,
+    user_role: str = Depends(get_current_user_role),
+    current_user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    """删除阿姨档案（管理员/员工可删除自己录入的）"""
+    if user_role not in ["admin", "staff"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无权操作"
+        )
+
+    worker = db.query(WorkerProfile).filter(WorkerProfile.id == worker_id).first()
+    if not worker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="阿姨档案不存在"
+        )
+
+    # 员工只能删除自己录入的阿姨
+    if user_role == "staff" and worker.recorder_staff_id != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只能删除自己录入的阿姨档案"
+        )
+
+    try:
+        user_id = worker.user_id
+
+        if user_id:
+            # 清理访客留资中的阿姨引用
+            from app.models.appointment import GuestLead
+            db.query(GuestLead).filter(GuestLead.worker_id == user_id).update({"worker_id": None})
+
+            # 清理阿姨时间段和服务设置
+            from app.models.worker import WorkerTimeSlot, WorkerService
+            db.query(WorkerTimeSlot).filter(WorkerTimeSlot.worker_id == user_id).delete()
+            db.query(WorkerService).filter(WorkerService.worker_id == user_id).delete()
+
+        # 删除阿姨档案
+        db.delete(worker)
+
+        db.commit()
+        return ApiResponse.success(message="阿姨档案已删除")
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"删除失败: {str(e)}"
+        )
+
+
+@router.delete("/staffs/{staff_id}", summary="删除员工账号")
+async def delete_staff(
+    staff_id: str,
+    user_role: str = Depends(get_current_user_role),
+    current_user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    """删除员工账号（仅管理员）"""
+    if user_role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无权操作"
+        )
+
+    if staff_id == current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="不能删除自己的账号"
+        )
+
+    user = db.query(User).filter(User.id == staff_id, User.role == "staff").first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="员工不存在"
+        )
+
+    try:
+        # 删除员工
+        db.delete(user)
+        db.commit()
+        return ApiResponse.success(message="员工账号已删除")
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"删除失败: {str(e)}"
+        )

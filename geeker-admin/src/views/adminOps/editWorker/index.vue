@@ -472,6 +472,8 @@ const submitForm = async () => {
     });
     ElMessage.success("阿姨档案更新成功");
     router.push({ path: `/worker/detail/${workerId}`, query: { refresh: Date.now().toString() } });
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.detail || e?.message || "更新失败");
   } finally {
     submitting.value = false;
   }
