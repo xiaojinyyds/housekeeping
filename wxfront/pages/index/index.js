@@ -266,14 +266,14 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: "千陌家政，帮你更快找到合适阿姨",
+      title: "玉心家政，帮你更快找到合适阿姨",
       path: "/pages/index/index?from=share_app_message"
     };
   },
 
   onShareTimeline() {
     return {
-      title: "千陌家政，帮你更快找到合适阿姨",
+      title: "玉心家政，帮你更快找到合适阿姨",
       query: "from=share_timeline"
     };
   }

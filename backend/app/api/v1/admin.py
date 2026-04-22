@@ -36,7 +36,7 @@ def normalize_list_field(value, field_name: str):
     )
 
 
-def build_worker_login_email(id_card: str, phone: Optional[str] = None):
+def build_worker_login_email(id_card: Optional[str], phone: Optional[str] = None):
     base = (id_card or phone or secrets.token_hex(6)).strip()
     return f"{base}@worker.local"
 
@@ -938,10 +938,11 @@ async def create_worker(
         "id_card_back": id_card_back,
         "health_certificate": health_certificate
     }
+    normalized_request["id_card"] = (normalized_request.get("id_card") or "").strip() or None
 
     required_fields = [
-        "real_name", "phone", "id_card", "gender", "age", "address",
-        "skills", "introduction", "id_card_front", "id_card_back"
+        "real_name", "phone", "gender", "age", "address",
+        "skills", "introduction"
     ]
     for field in required_fields:
         if normalized_request.get(field) in [None, "", []]:
@@ -963,19 +964,20 @@ async def create_worker(
             detail="该手机号已被注册"
         )
 
-    existing_id_card = db.query(WorkerProfile).filter(WorkerProfile.id_card == normalized_request["id_card"]).first()
-    if existing_id_card:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="该身份证号已被注册"
-        )
+    if normalized_request["id_card"]:
+        existing_id_card = db.query(WorkerProfile).filter(WorkerProfile.id_card == normalized_request["id_card"]).first()
+        if existing_id_card:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="该身份证号已被注册"
+            )
 
-    existing_user_id_card = db.query(User).filter(User.id_card == normalized_request["id_card"]).first()
-    if existing_user_id_card:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="该身份证号已被使用"
-        )
+        existing_user_id_card = db.query(User).filter(User.id_card == normalized_request["id_card"]).first()
+        if existing_user_id_card:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="该身份证号已被使用"
+            )
 
     try:
         from app.core.security import get_password_hash
@@ -987,10 +989,11 @@ async def create_worker(
         recommended_reasons = normalize_list_field(normalized_request.get("recommended_reasons"), "recommended_reasons") or []
         work_experiences = normalized_request.get("work_experiences")
 
-        login_email = build_worker_login_email(normalized_request["id_card"], normalized_request.get("phone"))
+        login_seed = normalized_request.get("id_card") or normalized_request.get("phone")
+        login_email = build_worker_login_email(normalized_request.get("id_card"), normalized_request.get("phone"))
         while db.query(User).filter(User.email == login_email).first():
             login_email = build_worker_login_email(
-                f"{normalized_request['id_card']}_{generate_uuid()[:6]}",
+                f"{login_seed}_{generate_uuid()[:6]}",
                 normalized_request.get("phone")
             )
 

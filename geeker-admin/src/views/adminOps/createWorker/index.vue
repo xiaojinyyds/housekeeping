@@ -23,8 +23,8 @@
           <el-form-item label="手机号" prop="phone">
             <el-input v-model="form.phone" placeholder="请输入 11 位手机号" />
           </el-form-item>
-          <el-form-item label="身份证号" prop="id_card">
-            <el-input v-model="form.id_card" placeholder="请输入身份证号" />
+          <el-form-item label="身份证号（选填）" prop="id_card">
+            <el-input v-model="form.id_card" placeholder="请输入身份证号，不填也可创建" />
           </el-form-item>
         </div>
 
@@ -167,10 +167,10 @@
             </div>
           </div>
           <div class="certificate-grid">
-            <el-form-item label="身份证人像面" prop="id_card_front">
+            <el-form-item label="身份证人像面（选填）" prop="id_card_front">
               <ImageUploader v-model="form.id_card_front" folder="worker-id-card" />
             </el-form-item>
-            <el-form-item label="身份证国徽面" prop="id_card_back">
+            <el-form-item label="身份证国徽面（选填）" prop="id_card_back">
               <ImageUploader v-model="form.id_card_back" folder="worker-id-card" />
             </el-form-item>
             <el-form-item label="健康证">
@@ -468,7 +468,7 @@ const submitForm = async () => {
     await createWorkerApi({
       real_name: form?.real_name || '',
       phone: form?.phone || '',
-      id_card: form?.id_card || '',
+      id_card: form?.id_card?.trim() || undefined,
       gender: form?.gender || 'female',
       age: form?.age || 30,
       experience_years: form?.experience_years || 1,
@@ -488,8 +488,8 @@ const submitForm = async () => {
       expected_salary: form?.expected_salary,
       current_status: form?.current_status || 'available',
       avatar_url: form?.avatar_url || undefined,
-      id_card_front: form?.id_card_front || '',
-      id_card_back: form?.id_card_back || '',
+      id_card_front: form?.id_card_front || undefined,
+      id_card_back: form?.id_card_back || undefined,
       health_certificate: form?.health_certificate || undefined,
       health_report: form?.health_report || undefined,
       practice_certificate: form?.practice_certificate || undefined,
