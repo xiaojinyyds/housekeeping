@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     # 服务器地址配置
     BACKEND_URL: str = Field(default="http://localhost:8000", description="后端服务器地址")
     FRONTEND_URL: str = Field(default="http://localhost:9000", description="前端服务器地址")
+
+    # 微信小程序（分享 URL Link / 小程序码等，可选）
+    WECHAT_MP_APPID: str = Field(default="", description="小程序 AppID")
+    WECHAT_MP_SECRET: str = Field(default="", description="小程序 AppSecret")
     
     @property
     def get_allowed_origins(self) -> List[str]:

@@ -21,6 +21,17 @@ router = APIRouter()
 
 
 WORKER_DEFAULT_PASSWORD_LENGTH = 12
+MAX_LIFE_PHOTOS = 5
+
+
+def normalize_id_card(value) -> Optional[str]:
+    text = (value or "").strip()
+    return text or None
+
+
+def normalize_life_photos(value):
+    photos = normalize_list_field(value, "life_photos") or []
+    return photos[:MAX_LIFE_PHOTOS]
 
 
 def normalize_list_field(value, field_name: str):
@@ -90,6 +101,42 @@ def replace_worker_experiences(db: Session, worker_profile_id: str, items):
             job_content=item["job_content"],
             sort_order=item["sort_order"]
         ))
+
+
+WORKER_STATUS_TEXT = {
+    "available": "想接单",
+    "on_job": "上户中",
+    "paused": "不接单",
+    "pending_confirm": "待确认",
+    "blacklisted": "黑名单",
+    "inactive": "停用",
+}
+
+
+def build_admin_worker_detail(db: Session, worker_id: str) -> dict:
+    worker = db.query(WorkerProfile).filter(WorkerProfile.user_id == worker_id).first()
+    user = db.query(User).filter(User.id == worker_id).first()
+    if not worker or not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="阿姨档案不存在"
+        )
+
+    experiences = (
+        db.query(WorkerExperience)
+        .filter(WorkerExperience.worker_profile_id == worker.id)
+        .order_by(WorkerExperience.sort_order.asc(), WorkerExperience.start_date.desc())
+        .all()
+    )
+
+    data = worker.to_dict()
+    data["avatar_url"] = user.avatar_url
+    data["work_experiences"] = [item.to_dict() for item in experiences]
+    data["current_status_text"] = WORKER_STATUS_TEXT.get(
+        worker.current_status,
+        worker.current_status or "-"
+    )
+    return data
 
 
 @router.get("/users", summary="获取用户列表（管理员）")
@@ -253,10 +300,6 @@ async def get_workers_admin(
 
     query = db.query(WorkerProfile)
 
-    # 员工只能看自己录入的阿姨
-    if user_role == "staff":
-        query = query.filter(WorkerProfile.recorder_staff_id == current_user_id)
-
     if is_available is not None:
         query = query.filter(WorkerProfile.is_available == is_available)
 
@@ -302,6 +345,24 @@ async def get_workers_admin(
             "page_size": page_size,
             "total_pages": (total + page_size - 1) // page_size
         },
+        message="获取成功"
+    )
+
+
+@router.get("/workers/{worker_id}", summary="获取阿姨档案详情/管理端")
+async def get_worker_admin_detail(
+    worker_id: str,
+    user_role: str = Depends(get_current_user_role),
+    db: Session = Depends(get_db)
+):
+    if user_role not in ["admin", "staff"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="无权操作"
+        )
+
+    return ApiResponse.success(
+        data=build_admin_worker_detail(db, worker_id),
         message="获取成功"
     )
 
@@ -450,9 +511,13 @@ async def get_statistics(
         month_lead_query = lead_base_query.filter(CustomerLead.lead_date >= month_start.date())
         month_worker_query = worker_add_base_query.filter(WorkerProfile.created_at >= month_start)
 
-        month_contract_amount = month_contract_query.with_entities(
+        month_contract_amount_gross = month_contract_query.with_entities(
             func.coalesce(func.sum(ServiceContract.contract_amount), 0)
         ).scalar() or 0
+        month_refund_amount = month_contract_query.with_entities(
+            func.coalesce(func.sum(ServiceContract.refund_amount), 0)
+        ).scalar() or 0
+        month_contract_amount = float(month_contract_amount_gross or 0) - float(month_refund_amount or 0)
         month_contract_count = month_contract_query.with_entities(func.count(ServiceContract.id)).scalar() or 0
         month_lead_count = month_lead_query.with_entities(func.count(CustomerLead.id)).scalar() or 0
         month_worker_add_count = month_worker_query.with_entities(func.count(WorkerProfile.id)).scalar() or 0
@@ -461,7 +526,10 @@ async def get_statistics(
             contract_base_query.filter(ServiceContract.contract_date >= seven_days[0])
             .with_entities(
                 ServiceContract.contract_date.label("day"),
-                func.coalesce(func.sum(ServiceContract.contract_amount), 0).label("amount"),
+                (
+                    func.coalesce(func.sum(ServiceContract.contract_amount), 0)
+                    - func.coalesce(func.sum(ServiceContract.refund_amount), 0)
+                ).label("amount"),
                 func.count(ServiceContract.id).label("count")
             )
             .group_by(ServiceContract.contract_date)
@@ -515,11 +583,15 @@ async def get_statistics(
 
         staff_ranking = []
         if user_role == "admin":
+            net_amount_expr = (
+                func.coalesce(func.sum(ServiceContract.contract_amount), 0)
+                - func.coalesce(func.sum(ServiceContract.refund_amount), 0)
+            )
             staff_rows = (
                 db.query(
                     ServiceContract.broker_staff_id.label("staff_id"),
                     func.count(ServiceContract.id).label("contract_count"),
-                    func.coalesce(func.sum(ServiceContract.contract_amount), 0).label("contract_amount")
+                    net_amount_expr.label("contract_amount")
                 )
                 .filter(
                     ServiceContract.contract_date >= month_start.date(),
@@ -527,7 +599,7 @@ async def get_statistics(
                 )
                 .group_by(ServiceContract.broker_staff_id)
                 .order_by(
-                    func.coalesce(func.sum(ServiceContract.contract_amount), 0).desc(),
+                    net_amount_expr.desc(),
                     func.count(ServiceContract.id).desc()
                 )
                 .all()
@@ -938,11 +1010,13 @@ async def create_worker(
         "id_card_back": id_card_back,
         "health_certificate": health_certificate
     }
-    normalized_request["id_card"] = (normalized_request.get("id_card") or "").strip() or None
+    normalized_request["id_card"] = normalize_id_card(normalized_request.get("id_card"))
+
+    from app.utils.worker_intro import has_intro_content
 
     required_fields = [
         "real_name", "phone", "gender", "age", "address",
-        "skills", "introduction"
+        "skills"
     ]
     for field in required_fields:
         if normalized_request.get(field) in [None, "", []]:
@@ -950,6 +1024,12 @@ async def create_worker(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"缺少必要字段: {field}"
             )
+
+    if not has_intro_content(normalized_request):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="请至少填写一项个人介绍（家庭情况/性格描述/性格爱好/擅长工作）"
+        )
 
     if normalized_request.get("experience_years") in [None, ""]:
         raise HTTPException(
@@ -962,6 +1042,16 @@ async def create_worker(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="该手机号已被注册"
+        )
+
+    duplicate_profile = db.query(WorkerProfile).filter(
+        WorkerProfile.real_name == normalized_request["real_name"],
+        WorkerProfile.phone == normalized_request["phone"]
+    ).first()
+    if duplicate_profile:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="姓名和手机号完全相同的阿姨档案已存在"
         )
 
     if normalized_request["id_card"]:
@@ -1027,11 +1117,20 @@ async def create_worker(
             emergency_contact=normalized_request.get("emergency_contact"),
             emergency_phone=normalized_request.get("emergency_phone"),
             address=normalized_request["address"],
+            zodiac=normalized_request.get("zodiac"),
+            marital_status=normalized_request.get("marital_status"),
+            education=normalized_request.get("education"),
+            native_place=normalized_request.get("native_place"),
+            life_photos=normalize_life_photos(normalized_request.get("life_photos")) or [],
             experience_years=int(normalized_request["experience_years"]),
             skills=skills,
             job_types=job_types,
             can_drive=bool(normalized_request.get("can_drive", False)),
-            introduction=normalized_request["introduction"],
+            family_situation=(normalized_request.get("family_situation") or "").strip() or None,
+            personality_desc=(normalized_request.get("personality_desc") or "").strip() or None,
+            personality_hobbies=(normalized_request.get("personality_hobbies") or "").strip() or None,
+            skilled_work=(normalized_request.get("skilled_work") or "").strip() or None,
+            introduction="",
             recommended_reasons=recommended_reasons,
             internal_remark=normalized_request.get("internal_remark"),
             service_areas=service_areas,
@@ -1051,6 +1150,10 @@ async def create_worker(
             total_orders=0,
             completed_orders=0
         )
+
+        from app.utils.worker_intro import apply_intro_fields
+
+        apply_intro_fields(worker_profile, normalized_request)
 
         db.add(worker_profile)
         db.flush()  # 触发 ID 生成
@@ -1102,6 +1205,9 @@ async def update_worker(
 
     normalized_request = dict(request or {})
 
+    if "id_card" in normalized_request:
+        normalized_request["id_card"] = normalize_id_card(normalized_request.get("id_card"))
+
     phone = normalized_request.get("phone")
     if phone and phone != worker.phone:
         existing_phone = db.query(User).filter(User.phone == phone, User.id != worker_id).first()
@@ -1111,7 +1217,7 @@ async def update_worker(
                 detail="该手机号已被使用"
             )
 
-    id_card = normalized_request.get("id_card")
+    id_card = normalized_request.get("id_card") if "id_card" in normalized_request else worker.id_card
     if id_card and id_card != worker.id_card:
         existing_id_card = db.query(WorkerProfile).filter(
             WorkerProfile.id_card == id_card,
@@ -1127,6 +1233,20 @@ async def update_worker(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="该身份证号已被使用"
+            )
+
+    check_name = normalized_request.get("real_name", worker.real_name)
+    check_phone = normalized_request.get("phone", worker.phone)
+    if "real_name" in normalized_request or "phone" in normalized_request:
+        duplicate_profile = db.query(WorkerProfile).filter(
+            WorkerProfile.real_name == check_name,
+            WorkerProfile.phone == check_phone,
+            WorkerProfile.user_id != worker_id
+        ).first()
+        if duplicate_profile:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="姓名和手机号完全相同的阿姨档案已存在"
             )
 
     try:
@@ -1154,8 +1274,27 @@ async def update_worker(
             worker.emergency_phone = normalized_request["emergency_phone"]
         if "address" in normalized_request:
             worker.address = normalized_request["address"]
-        if "introduction" in normalized_request:
-            worker.introduction = normalized_request["introduction"]
+        if "zodiac" in normalized_request:
+            worker.zodiac = normalized_request["zodiac"]
+        if "marital_status" in normalized_request:
+            worker.marital_status = normalized_request["marital_status"]
+        if "education" in normalized_request:
+            worker.education = normalized_request["education"]
+        if "native_place" in normalized_request:
+            worker.native_place = normalized_request["native_place"]
+        if "life_photos" in normalized_request:
+            worker.life_photos = normalize_life_photos(normalized_request.get("life_photos")) or []
+        intro_field_keys = (
+            "family_situation",
+            "personality_desc",
+            "personality_hobbies",
+            "skilled_work",
+            "introduction",
+        )
+        if any(key in normalized_request for key in intro_field_keys):
+            from app.utils.worker_intro import apply_intro_fields
+
+            apply_intro_fields(worker, normalized_request)
         if "internal_remark" in normalized_request:
             worker.internal_remark = normalized_request["internal_remark"]
         if "hourly_rate" in normalized_request:

@@ -103,7 +103,7 @@ export const getWorkersApi = (
 ) =>
   http.get("/api/v1/admin/workers/list", params);
 
-export const getWorkerDetailApi = (workerId: string) => http.get(`/api/v1/worker/workers/${workerId}`);
+export const getWorkerDetailApi = (workerId: string) => http.get(`/api/v1/admin/workers/${workerId}`);
 
 export const updateWorkerApi = (workerId: string, payload: Record<string, any>) =>
   http.put(`/api/v1/admin/workers/${workerId}`, payload);
@@ -182,8 +182,14 @@ export const deleteStaffApi = (staffId: string) =>
 export const getGuestLeadsApi = (params: PageParams & { status?: string; customer_name?: string; customer_phone?: string }) =>
   http.get("/api/v1/appointment/guest-leads", params);
 
+export const getGuestLeadPendingCountApi = () =>
+  http.get("/api/v1/appointment/guest-leads/pending-count", {}, { loading: false });
+
 export const updateGuestLeadStatusApi = (leadId: string, status: string, remark?: string) =>
   http.put(`/api/v1/appointment/guest-leads/${leadId}/status`, {}, { params: { status, remark } });
+
+export const markGuestLeadViewedApi = (leadId: string) =>
+  http.post(`/api/v1/appointment/guest-leads/${leadId}/mark-viewed`);
 
 export const exportLeadsApi = (params?: {
   owner_staff_id?: string;

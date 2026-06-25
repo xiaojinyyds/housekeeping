@@ -9,7 +9,7 @@ from datetime import datetime
 import uuid
 
 from app.core.database import get_db
-from app.core.security import get_current_user_id
+from app.core.security import get_current_user_id, get_current_user_role
 from app.models.user import User
 from app.models.appointment import Appointment, AppointmentStatus, Review
 from app.models.worker import WorkerProfile
@@ -40,13 +40,22 @@ async def create_guest_lead(
     """微信小程序访客提交意向预约（无需登录）"""
     import uuid
     
+    owner_staff_id = lead_data.share_staff_id
+    if owner_staff_id:
+        staff = db.query(User).filter(User.id == owner_staff_id, User.role.in_(["staff", "admin"])).first()
+        if not staff:
+            owner_staff_id = None
+
     new_lead = GuestLead(
         id=str(uuid.uuid4()),
         worker_id=lead_data.worker_id,
+        owner_staff_id=owner_staff_id,
         customer_name=lead_data.customer_name,
         customer_phone=lead_data.customer_phone,
+        demand_detail=(lead_data.demand_detail or "").strip() or None,
         source=lead_data.source or 'wx_mini_program',
-        status='pending'
+        status='pending',
+        is_read=False
     )
     
     db.add(new_lead)
@@ -57,6 +66,26 @@ async def create_guest_lead(
 
 # ============ 管理端预约留资接口 ============
 
+@router.get("/guest-leads/pending-count", summary="待跟进预约留言数量")
+async def get_guest_leads_pending_count(
+    user_role: str = Depends(get_current_user_role),
+    current_user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    if user_role not in ["admin", "staff"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权访问")
+
+    query = db.query(func.count(GuestLead.id)).filter(
+        GuestLead.status == "pending",
+        GuestLead.is_read == False  # noqa: E712
+    )
+    if user_role == "staff":
+        query = query.filter(GuestLead.owner_staff_id == current_user_id)
+
+    count = query.scalar() or 0
+    return ApiResponse.success(data={"pending_count": int(count)})
+
+
 @router.get("/guest-leads", summary="获取访客留资列表（管理端）")
 async def get_guest_leads(
     page: int = Query(1, ge=1),
@@ -64,12 +93,20 @@ async def get_guest_leads(
     status: Optional[str] = Query(None, description="状态：pending/contacted/invalid"),
     customer_name: Optional[str] = Query(None),
     customer_phone: Optional[str] = Query(None),
+    user_role: str = Depends(get_current_user_role),
+    current_user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
-    """获取小程序收集的访客预约留言列表"""
+    """获取小程序收集的访客预约留言列表（员工仅看自己分享的客户）"""
+    if user_role not in ["admin", "staff"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权访问")
+
     query = db.query(GuestLead, WorkerProfile.real_name.label("worker_name")).outerjoin(
         WorkerProfile, GuestLead.worker_id == WorkerProfile.user_id
     )
+
+    if user_role == "staff":
+        query = query.filter(GuestLead.owner_staff_id == current_user_id)
     
     if status:
         query = query.filter(GuestLead.status == status)
@@ -96,20 +133,51 @@ async def get_guest_leads(
     })
 
 
+@router.post("/guest-leads/{lead_id}/mark-viewed", summary="标记访客留资为已读（管理端）")
+async def mark_guest_lead_viewed(
+    lead_id: str,
+    user_role: str = Depends(get_current_user_role),
+    current_user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    if user_role not in ["admin", "staff"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权访问")
+
+    lead = db.query(GuestLead).filter(GuestLead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="记录不存在")
+
+    if user_role == "staff" and lead.owner_staff_id != current_user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作该留言")
+
+    lead.is_read = True
+    db.commit()
+    return ApiResponse.success(message="已标记为已读")
+
+
 @router.put("/guest-leads/{lead_id}/status", summary="更新访客留资状态（管理端）")
 async def update_guest_lead_status(
     lead_id: str,
     status: str = Query(..., description="等同于枚举 pending/contacted/invalid/converted"),
     remark: Optional[str] = Query(None),
+    user_role: str = Depends(get_current_user_role),
+    current_user_id: str = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
     """跟进访客预约留言"""
+    if user_role not in ["admin", "staff"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权访问")
+
     lead = db.query(GuestLead).filter(GuestLead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="记录不存在")
+
+    if user_role == "staff" and lead.owner_staff_id != current_user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作该留言")
         
     lead.status = status
-    if remark:
+    lead.is_read = True
+    if remark is not None:
         lead.handling_remark = remark
         
     db.commit()

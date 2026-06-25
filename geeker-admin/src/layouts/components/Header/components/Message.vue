@@ -1,109 +1,70 @@
 <template>
   <div class="message">
-    <el-popover placement="bottom" :width="310" trigger="click">
+    <el-popover placement="bottom" :width="320" trigger="click" @show="loadPending">
       <template #reference>
-        <el-badge :value="5" class="item">
+        <el-badge :value="pendingCount > 0 ? pendingCount : ''" :hidden="pendingCount <= 0" class="item">
           <i :class="'iconfont icon-xiaoxi'" class="toolBar-icon"></i>
         </el-badge>
       </template>
-      <el-tabs v-model="activeName">
-        <el-tab-pane label="通知(5)" name="first">
-          <div class="message-list">
-            <div class="message-item">
-              <img src="@/assets/images/msg01.png" alt="" class="message-icon" />
-              <div class="message-content">
-                <span class="message-title">一键三连 Geeker-Admin 🧡</span>
-                <span class="message-date">一分钟前</span>
-              </div>
-            </div>
-            <div class="message-item">
-              <img src="@/assets/images/msg02.png" alt="" class="message-icon" />
-              <div class="message-content">
-                <span class="message-title">一键三连 Geeker-Admin 💙</span>
-                <span class="message-date">一小时前</span>
-              </div>
-            </div>
-            <div class="message-item">
-              <img src="@/assets/images/msg03.png" alt="" class="message-icon" />
-              <div class="message-content">
-                <span class="message-title">一键三连 Geeker-Admin 💚</span>
-                <span class="message-date">半天前</span>
-              </div>
-            </div>
-            <div class="message-item">
-              <img src="@/assets/images/msg04.png" alt="" class="message-icon" />
-              <div class="message-content">
-                <span class="message-title">一键三连 Geeker-Admin 💜</span>
-                <span class="message-date">一星期前</span>
-              </div>
-            </div>
-            <div class="message-item">
-              <img src="@/assets/images/msg05.png" alt="" class="message-icon" />
-              <div class="message-content">
-                <span class="message-title">一键三连 Geeker-Admin 💛</span>
-                <span class="message-date">一个月前</span>
-              </div>
-            </div>
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="消息(0)" name="second">
-          <div class="message-empty">
-            <img src="@/assets/images/notData.png" alt="notData" />
-            <div>暂无消息</div>
-          </div>
-        </el-tab-pane>
-        <el-tab-pane label="待办(0)" name="third">
-          <div class="message-empty">
-            <img src="@/assets/images/notData.png" alt="notData" />
-            <div>暂无待办</div>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
+      <div class="message-panel">
+        <div class="panel-title">待跟进预约留言</div>
+        <div v-if="pendingCount > 0" class="pending-tip">
+          您有 <strong>{{ pendingCount }}</strong> 条未读待跟进客户留言
+        </div>
+        <div v-else class="message-empty">暂无待跟进留言</div>
+        <el-button v-if="pendingCount > 0" type="primary" link @click="goGuestLeads">前往处理</el-button>
+      </div>
     </el-popover>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-const activeName = ref("first");
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { getGuestLeadPendingCountApi } from "@/api/modules/business";
+import { useUserStore } from "@/stores/modules/user";
+
+const router = useRouter();
+const userStore = useUserStore();
+const pendingCount = ref(0);
+
+const loadPending = async () => {
+  const role = userStore.userInfo?.role;
+  if (!role || !["admin", "staff"].includes(role)) {
+    pendingCount.value = 0;
+    return;
+  }
+  try {
+    const response = (await getGuestLeadPendingCountApi()) as any;
+    const data = response?.data ?? response ?? {};
+    pendingCount.value = Number(data.pending_count || 0);
+  } catch {
+    pendingCount.value = 0;
+  }
+};
+
+const goGuestLeads = () => {
+  router.push("/lead/guest");
+};
+
+onMounted(loadPending);
 </script>
 
 <style scoped lang="scss">
-.message-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 260px;
-  line-height: 45px;
+.message-panel {
+  padding: 8px 4px;
 }
-.message-list {
-  display: flex;
-  flex-direction: column;
-  .message-item {
-    display: flex;
-    align-items: center;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--el-border-color-light);
-    &:last-child {
-      border: none;
-    }
-    .message-icon {
-      width: 40px;
-      height: 40px;
-      margin: 0 20px 0 5px;
-    }
-    .message-content {
-      display: flex;
-      flex-direction: column;
-      .message-title {
-        margin-bottom: 5px;
-      }
-      .message-date {
-        font-size: 12px;
-        color: var(--el-text-color-secondary);
-      }
-    }
-  }
+.panel-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.pending-tip {
+  margin-bottom: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+}
+.message-empty {
+  color: var(--el-text-color-secondary);
+  margin-bottom: 12px;
 }
 </style>

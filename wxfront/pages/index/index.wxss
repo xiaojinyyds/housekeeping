@@ -173,6 +173,28 @@
   margin-bottom: 12rpx;
 }
 
+.card-actions {
+  margin-top: 12rpx;
+}
+
+.mini-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 24rpx;
+  font-size: 22rpx;
+  color: #f08c2e;
+  background: #fff7ef;
+  border: 1rpx solid #ffd4a8;
+  border-radius: 999rpx;
+}
+
+.mini-share-btn::after {
+  border: none;
+}
+
 .tags-row {
   display: flex;
   flex-wrap: wrap;

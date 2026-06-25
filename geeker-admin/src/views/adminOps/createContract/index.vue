@@ -105,6 +105,15 @@
           </el-form-item>
         </div>
 
+        <div v-if="form.status === 'refunded'" class="grid two">
+          <el-form-item label="退款金额" prop="refund_amount">
+            <el-input-number v-model="form.refund_amount" :min="0.01" :precision="2" class="full-width" />
+          </el-form-item>
+          <el-form-item label="退款原因" prop="refund_reason">
+            <el-input v-model="form.refund_reason" type="textarea" :rows="3" placeholder="请填写退款原因" />
+          </el-form-item>
+        </div>
+
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
         </el-form-item>
@@ -153,7 +162,9 @@ const createDefaultForm = () => ({
   contract_amount: undefined as number | undefined,
   actual_received: undefined as number | undefined,
   demand_detail: "",
-  remark: ""
+  remark: "",
+  refund_amount: undefined as number | undefined,
+  refund_reason: ""
 });
 
 const form = reactive(createDefaultForm());
@@ -165,7 +176,39 @@ const rules: FormRules = {
   customer_phone: [{ required: true, message: "请输入客户电话", trigger: "blur" }],
   service_address: [{ required: true, message: "请输入服务地址", trigger: "blur" }],
   service_type: [{ required: true, message: "请选择订单类型", trigger: "change" }],
-  worker_user_id: [{ required: true, message: "请选择阿姨档案", trigger: "change" }]
+  worker_user_id: [{ required: true, message: "请选择阿姨档案", trigger: "change" }],
+  refund_amount: [
+    {
+      validator: (_rule, value, callback) => {
+        if (form.status !== "refunded") {
+          callback();
+          return;
+        }
+        if (value === undefined || value === null || Number(value) <= 0) {
+          callback(new Error("请填写退款金额"));
+          return;
+        }
+        callback();
+      },
+      trigger: "change"
+    }
+  ],
+  refund_reason: [
+    {
+      validator: (_rule, value, callback) => {
+        if (form.status !== "refunded") {
+          callback();
+          return;
+        }
+        if (!String(value || "").trim()) {
+          callback(new Error("请填写退款原因"));
+          return;
+        }
+        callback();
+      },
+      trigger: "blur"
+    }
+  ]
 };
 
 const resetForm = () => {

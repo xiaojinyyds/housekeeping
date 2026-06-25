@@ -1,4 +1,5 @@
 const api = require("../../utils/api.js");
+const share = require("../../utils/share.js");
 
 const JOB_TYPE_OPTIONS = [
   "全部",
@@ -26,7 +27,7 @@ const MOCK_WORKER = {
   job_types: ["白班育儿嫂", "白班保姆"],
   service_areas: ["浦东新区", "花木", "张江"],
   current_status: "available",
-  status_text: "可预约",
+  status_text: "想接单",
   is_available: true,
   is_recommended: true,
   completed_orders: 126,
@@ -257,6 +258,12 @@ Page({
     );
   },
 
+  previewAvatar(e) {
+    const url = e.currentTarget.dataset.url;
+    if (!url) return;
+    wx.previewImage({ current: url, urls: [url] });
+  },
+
   goToDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({
@@ -264,17 +271,29 @@ Page({
     });
   },
 
+  onShareWorkerTap(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    const worker = this.data.workers[index];
+    if (!worker || share.isMockWorkerId(worker.user_id)) {
+      wx.showToast({ title: "请分享真实阿姨档案", icon: "none" });
+      return;
+    }
+    this._shareWorker = worker;
+  },
+
   onShareAppMessage() {
-    return {
-      title: "玉心家政，帮你更快找到合适阿姨",
-      path: "/pages/index/index?from=share_app_message"
-    };
+    if (this._shareWorker && !share.isMockWorkerId(this._shareWorker.user_id)) {
+      return share.wrapShareWithImageCheck(
+        share.buildWorkerAppMessage(this._shareWorker, this._shareWorker.user_id, "")
+      );
+    }
+    return share.wrapShareWithImageCheck(share.buildHomeShare());
   },
 
   onShareTimeline() {
-    return {
-      title: "玉心家政，帮你更快找到合适阿姨",
-      query: "from=share_timeline"
-    };
+    if (this._shareWorker && !share.isMockWorkerId(this._shareWorker.user_id)) {
+      return share.buildWorkerTimeline(this._shareWorker, this._shareWorker.user_id, "");
+    }
+    return share.buildHomeTimeline();
   }
 });

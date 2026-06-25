@@ -149,10 +149,14 @@ class GuestLead(Base):
     
     id = Column(String(36), primary_key=True)
     worker_id = Column(String(36), ForeignKey('users.id'), nullable=True, comment="意向阿姨ID")
+    owner_staff_id = Column(String(36), ForeignKey('users.id'), nullable=True, comment="分享员工ID")
     customer_name = Column(String(50), nullable=False, comment="客户姓名/称呼")
     customer_phone = Column(String(20), nullable=False, comment="客户电话")
+    demand_detail = Column(Text, nullable=True, comment="客户需求描述")
     source = Column(String(50), default='wx_mini_program', comment="来源")
-    status = Column(String(20), default='pending', comment="状态: pending/contacted/converted/closed")
+    status = Column(String(20), default='pending', comment="状态: pending/contacted/converted/invalid")
+    handling_remark = Column(Text, nullable=True, comment="跟进备注")
+    is_read = Column(Boolean, default=False, comment="是否已读")
     
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
@@ -161,10 +165,14 @@ class GuestLead(Base):
         return {
             "id": self.id,
             "worker_id": self.worker_id,
+            "owner_staff_id": self.owner_staff_id,
             "customer_name": self.customer_name,
             "customer_phone": self.customer_phone,
+            "demand_detail": self.demand_detail,
             "source": self.source,
             "status": self.status,
+            "handling_remark": self.handling_remark,
+            "is_read": bool(self.is_read),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

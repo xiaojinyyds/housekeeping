@@ -44,6 +44,7 @@ export const getAuthButtonListApi = () => {
         contractList: ["view", "create", "detail", "follow"],
         createContract: ["create"],
         contractDetail: ["view", "follow"],
+        guestLeadList: ["view", "edit"],
         workerList: ["view", "toggle", "recommend", "edit"],
         createWorker: ["create"]
       },

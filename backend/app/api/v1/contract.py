@@ -48,6 +48,18 @@ def parse_date(value) -> Optional[date]:
     return datetime.strptime(text, "%Y-%m-%d").date()
 
 
+def validate_refund_fields(status_value: str, refund_amount, refund_reason: str):
+    """已退款状态必须填写退款金额与原因"""
+    if status_value != "refunded":
+        return
+    if refund_amount in [None, ""]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="已退款状态须填写退款金额")
+    if float(refund_amount or 0) <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="退款金额须大于0")
+    if not (refund_reason or "").strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="已退款状态须填写退款原因")
+
+
 def user_display_name(user: Optional[User]) -> str:
     if not user:
         return ""
@@ -121,7 +133,9 @@ async def get_contract_list(
         )
 
     total = query.count()
-    total_contract_amount = query.with_entities(func.coalesce(func.sum(ServiceContract.contract_amount), 0)).scalar() or 0
+    gross_amount = query.with_entities(func.coalesce(func.sum(ServiceContract.contract_amount), 0)).scalar() or 0
+    refund_amount = query.with_entities(func.coalesce(func.sum(ServiceContract.refund_amount), 0)).scalar() or 0
+    total_contract_amount = float(gross_amount or 0) - float(refund_amount or 0)
     rows = query.order_by(ServiceContract.contract_date.desc(), ServiceContract.created_at.desc()).offset(
         (page - 1) * page_size
     ).limit(page_size).all()
@@ -185,6 +199,13 @@ async def create_contract(
     contract_date = parse_date(request.get("contract_date"))
     if not contract_date:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="contract_date格式错误，应为YYYY-MM-DD")
+
+    contract_status = request.get("status") or "pending_start"
+    validate_refund_fields(
+        contract_status,
+        request.get("refund_amount"),
+        request.get("refund_reason") or "",
+    )
 
     contract = ServiceContract(
         id=generate_uuid(),
@@ -255,10 +276,14 @@ async def get_contract_staff_summary(
     if end:
         query = query.filter(ServiceContract.contract_date <= end)
 
+    net_amount_expr = (
+        func.coalesce(func.sum(ServiceContract.contract_amount), 0)
+        - func.coalesce(func.sum(ServiceContract.refund_amount), 0)
+    )
     rows = query.with_entities(
         ServiceContract.broker_staff_id.label("staff_id"),
         func.count(ServiceContract.id).label("contract_count"),
-        func.coalesce(func.sum(ServiceContract.contract_amount), 0).label("total_contract_amount"),
+        net_amount_expr.label("total_contract_amount"),
     ).group_by(ServiceContract.broker_staff_id).all()
 
     staff_ids = [item.staff_id for item in rows if item.staff_id]
@@ -378,8 +403,17 @@ async def create_contract_followup(
 
     db.add(followup)
     contract.latest_follow_up_at = followup.followed_at or datetime.now()
-    if "status" in request and request.get("status"):
-        contract.status = request["status"]
+    new_status = request.get("status")
+    if new_status:
+        validate_refund_fields(
+            new_status,
+            request.get("refund_amount"),
+            request.get("refund_reason") or "",
+        )
+        contract.status = new_status
+        if new_status == "refunded":
+            contract.refund_amount = request.get("refund_amount")
+            contract.refund_reason = (request.get("refund_reason") or "").strip()
     db.commit()
     db.refresh(followup)
 

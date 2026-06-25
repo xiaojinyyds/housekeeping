@@ -1,7 +1,7 @@
 .page {
   background: #f5f5f5;
   min-height: 100vh;
-  padding-bottom: 140rpx;
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
 }
 
 .profile-card {
@@ -150,6 +150,31 @@
   color: #333;
 }
 
+.intro-block {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.intro-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.intro-label {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.intro-value {
+  font-size: 28rpx;
+  color: #555;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .intro-content,
 .experience-content {
   font-size: 28rpx;
@@ -204,6 +229,24 @@
   line-height: 1.7;
 }
 
+.guarantee-item {
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.8;
+  margin-bottom: 8rpx;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 160rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+  border: 1rpx solid #e8e8e8;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  background: #fafafa;
+}
+
 .cert-gallery {
   display: flex;
   flex-wrap: wrap;
@@ -232,7 +275,7 @@
 }
 
 .bottom-space {
-  height: 20rpx;
+  height: calc(130rpx + env(safe-area-inset-bottom));
 }
 
 .bottom-bar {
@@ -294,19 +337,25 @@
 
 .modal-content {
   position: fixed;
-  bottom: -700rpx;
   left: 0;
   right: 0;
+  bottom: 0;
   background: #fff;
   border-top-left-radius: 32rpx;
   border-top-right-radius: 32rpx;
-  padding: 40rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
+  padding: 40rpx 40rpx 0;
+  padding-bottom: env(safe-area-inset-bottom);
   z-index: 1000;
-  transition: bottom 0.3s ease;
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
-.modal-show {
-  bottom: 0;
+.modal-body {
+  flex: 1;
+  max-height: calc(78vh - 120rpx);
+  overflow: hidden;
 }
 
 .modal-header {
@@ -365,7 +414,8 @@
   border-radius: 44rpx;
   font-size: 32rpx;
   font-weight: 500;
-  margin-top: 40rpx;
+  margin-top: 24rpx;
+  margin-bottom: 40rpx;
 }
 
 .loading-state {

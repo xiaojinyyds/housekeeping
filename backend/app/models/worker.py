@@ -94,11 +94,20 @@ class WorkerProfile(Base):
     emergency_contact = Column(String(50))
     emergency_phone = Column(String(20))
     address = Column(String(255))
+    zodiac = Column(String(10), comment="属相")
+    marital_status = Column(String(20), comment="婚姻状态")
+    education = Column(String(50), comment="学历")
+    native_place = Column(String(100), comment="籍贯")
+    life_photos = Column(JSON, comment="生活/工作照片URL列表")
     experience_years = Column(Integer)
     skills = Column(JSON)
     job_types = Column(JSON)
     can_drive = Column(Boolean, default=False)
     introduction = Column(Text)
+    family_situation = Column(Text, comment="家庭情况")
+    personality_desc = Column(Text, comment="性格描述")
+    personality_hobbies = Column(Text, comment="性格爱好")
+    skilled_work = Column(Text, comment="擅长工作")
     recommended_reasons = Column(JSON)
     internal_remark = Column(Text)
     service_areas = Column(JSON)
@@ -136,11 +145,20 @@ class WorkerProfile(Base):
             "emergency_contact": self.emergency_contact,
             "emergency_phone": self.emergency_phone,
             "address": self.address,
+            "zodiac": self.zodiac,
+            "marital_status": self.marital_status,
+            "education": self.education,
+            "native_place": self.native_place,
+            "life_photos": self.life_photos or [],
             "experience_years": self.experience_years,
             "skills": self.skills,
             "job_types": self.job_types,
             "can_drive": self.can_drive,
             "introduction": self.introduction,
+            "family_situation": self.family_situation,
+            "personality_desc": self.personality_desc,
+            "personality_hobbies": self.personality_hobbies,
+            "skilled_work": self.skilled_work,
             "recommended_reasons": self.recommended_reasons,
             "internal_remark": self.internal_remark,
             "service_areas": self.service_areas,

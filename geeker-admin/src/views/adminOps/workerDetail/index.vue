@@ -6,6 +6,7 @@
         <p>查看阿姨完整资料、服务信息和证件内容，便于管理员统一管理。</p>
       </div>
       <div class="header-actions">
+        <el-button type="success" plain @click="copyMiniProgramSharePath">复制小程序分享路径</el-button>
         <el-button type="primary" @click="router.push(`/worker/edit/${route.params.workerId}`)">编辑档案</el-button>
         <el-button @click="router.push('/worker/list')">返回列表</el-button>
       </div>
@@ -15,7 +16,15 @@
       <div class="grid two">
         <div class="card section-card">
           <div class="profile-top">
-            <el-avatar :size="88" :src="detail.avatar_url || ''">{{ (detail.real_name || "阿").slice(0, 1) }}</el-avatar>
+            <el-image
+              v-if="detail.avatar_url"
+              class="profile-avatar"
+              :src="detail.avatar_url"
+              :preview-src-list="[detail.avatar_url]"
+              fit="cover"
+              preview-teleported
+            />
+            <el-avatar v-else :size="88">{{ (detail.real_name || "阿").slice(0, 1) }}</el-avatar>
             <div class="profile-top-text">
               <strong>{{ detail.real_name || "-" }}</strong>
               <span>{{ detail.current_status_text }}</span>
@@ -46,7 +55,15 @@
           </div>
 
           <div class="single-line"><label>居住地址</label><span>{{ detail.address || "-" }}</span></div>
-          <div class="single-line"><label>个人介绍</label><span>{{ detail.introduction || "-" }}</span></div>
+          <div class="single-line" v-if="detail.family_situation"><label>家庭情况</label><span>{{ detail.family_situation }}</span></div>
+          <div class="single-line" v-if="detail.personality_desc"><label>性格描述</label><span>{{ detail.personality_desc }}</span></div>
+          <div class="single-line" v-if="detail.personality_hobbies"><label>性格爱好</label><span>{{ detail.personality_hobbies }}</span></div>
+          <div class="single-line" v-if="detail.skilled_work"><label>擅长工作</label><span>{{ detail.skilled_work }}</span></div>
+          <div class="single-line" v-if="!detail.family_situation && !detail.personality_desc && detail.introduction"><label>个人介绍</label><span>{{ detail.introduction }}</span></div>
+          <div class="single-line" v-if="(detail.recommended_reasons || []).length">
+            <label>推荐理由</label>
+            <span>{{ (detail.recommended_reasons || []).join("；") }}</span>
+          </div>
           <div class="single-line"><label>内部备注</label><span>{{ detail.internal_remark || "-" }}</span></div>
         </div>
 
@@ -72,6 +89,22 @@
               <el-tag v-for="area in detail.service_areas || []" :key="area" type="success" effect="plain">{{ area }}</el-tag>
               <span v-if="!(detail.service_areas || []).length" class="empty-text">暂无</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card section-card" v-if="lifePhotoItems.length">
+        <div class="section-title">生活工作照片</div>
+        <div class="certificate-grid">
+          <div v-for="(url, index) in lifePhotoItems" :key="url" class="certificate-item">
+            <div class="certificate-label">生活照 {{ index + 1 }}</div>
+            <el-image
+              :src="url"
+              fit="cover"
+              class="certificate-image"
+              :preview-src-list="lifePhotoItems"
+              preview-teleported
+            />
           </div>
         </div>
       </div>
@@ -102,16 +135,19 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { getWorkerDetailApi } from "@/api/modules/business";
+import { useUserStore } from "@/stores/modules/user";
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const loading = ref(false);
 const detail = ref<Record<string, any> | null>(null);
 
 const statusTextMap: Record<string, string> = {
-  available: "可接单",
-  on_job: "在岗中",
-  paused: "暂停接单",
+  available: "想接单",
+  on_job: "上户中",
+  paused: "不接单",
+  pending_confirm: "待确认",
   blacklisted: "黑名单",
   inactive: "停用"
 };
@@ -123,6 +159,11 @@ const statusTypeMap: Record<string, "info" | "warning" | "success" | "danger"> =
   blacklisted: "danger",
   inactive: "info"
 };
+
+const lifePhotoItems = computed(() => {
+  const photos = detail.value?.life_photos;
+  return Array.isArray(photos) ? photos.filter(Boolean) : [];
+});
 
 const certificateItems = computed(() => {
   const data = detail.value || {};
@@ -139,6 +180,20 @@ const certificateItems = computed(() => {
 
 const previewImages = computed(() => certificateItems.value.map(item => item.url).filter(Boolean));
 
+const copyMiniProgramSharePath = async () => {
+  const workerId = String(route.params.workerId || "");
+  if (!workerId) return;
+  const staffId = userStore.userInfo?.id || "";
+  const query = staffId ? `id=${workerId}&staff_id=${staffId}` : `id=${workerId}`;
+  const path = `pages/detail/index?${query}`;
+  try {
+    await navigator.clipboard.writeText(path);
+    ElMessage.success("已复制小程序分享路径，可在微信中转发该阿姨档案");
+  } catch {
+    ElMessage.warning(`请手动复制：${path}`);
+  }
+};
+
 const loadDetail = async () => {
   const workerId = String(route.params.workerId || "");
   if (!workerId) return;
@@ -146,9 +201,6 @@ const loadDetail = async () => {
   try {
     const response = (await getWorkerDetailApi(workerId)) as any;
     const data = response?.data ?? response ?? null;
-    if (data) {
-      data.current_status_text = statusTextMap[data.current_status] || data.current_status || "-";
-    }
     detail.value = data;
   } catch {
     detail.value = null;
@@ -196,6 +248,13 @@ onMounted(loadDetail);
   margin-bottom: 16px;
   font-size: 18px;
   font-weight: 700;
+}
+
+.profile-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  cursor: zoom-in;
 }
 
 .profile-top {

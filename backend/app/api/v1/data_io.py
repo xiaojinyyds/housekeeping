@@ -868,6 +868,14 @@ async def import_workers(
                     results["failed"] += 1
                     continue
 
+                if db.query(WorkerProfile).filter(
+                    WorkerProfile.real_name == real_name,
+                    WorkerProfile.phone == phone
+                ).first():
+                    results["errors"].append(f"第{row_idx}行：姓名和手机号完全相同的阿姨已存在")
+                    results["failed"] += 1
+                    continue
+
                 login_email = f"worker_{generate_uuid()[:8]}@worker.local"
                 while db.query(User).filter(User.email == login_email).first():
                     login_email = f"worker_{generate_uuid()[:8]}@worker.local"

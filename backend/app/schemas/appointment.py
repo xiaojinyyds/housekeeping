@@ -106,6 +106,8 @@ class ReviewResponse(BaseModel):
 class GuestLeadCreate(BaseModel):
     """创建访客留资（无需登录）"""
     worker_id: Optional[str] = Field(None, description="意向阿姨ID")
+    share_staff_id: Optional[str] = Field(None, description="分享链接中的员工ID")
     customer_name: str = Field(..., max_length=50, description="客户姓名/称呼")
     customer_phone: str = Field(..., max_length=20, description="客户电话")
+    demand_detail: Optional[str] = Field(None, max_length=1000, description="客户需求描述")
     source: Optional[str] = Field("wx_mini_program", description="来源")

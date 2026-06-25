@@ -27,9 +27,10 @@
           <el-option v-for="item in jobTypeOptions" :key="item" :label="item" :value="item" />
         </el-select>
         <el-select v-model="currentStatus" placeholder="当前状态" clearable class="field-select" @change="loadWorkers">
-          <el-option label="可接单" value="available" />
-          <el-option label="服务中" value="on_job" />
-          <el-option label="暂停接单" value="paused" />
+          <el-option label="想接单" value="available" />
+          <el-option label="上户中" value="on_job" />
+          <el-option label="不接单" value="paused" />
+          <el-option label="待确认" value="pending_confirm" />
           <el-option label="黑名单" value="blacklisted" />
           <el-option label="停用" value="inactive" />
         </el-select>
@@ -47,7 +48,7 @@
       </div>
 
       <div class="toolbar-right">
-        <el-button v-if="isAdmin" @click="router.push('/worker/create')">新建阿姨档案</el-button>
+        <el-button @click="router.push('/worker/create')">新建阿姨档案</el-button>
         <el-button @click="downloadTemplate">下载模板</el-button>
         <el-button @click="triggerImport">导入阿姨</el-button>
         <el-button v-if="isAdmin" type="success" :loading="exporting" @click="exportWorkers">导出阿姨</el-button>
@@ -180,11 +181,12 @@ const jobTypeOptions = [
 ];
 
 const statusTextMap: Record<string, string> = {
-  available: "可接单",
-  on_job: "服务中",
-  paused: "暂停接单",
-  blacklisted: "黑名单",
-  inactive: "停用"
+  available: "想接单",
+  on_job: "上户中",
+  paused: "不接单",
+  pending_confirm: "待确认",
+  blacklisted: "不接单",
+  inactive: "不接单"
 };
 
 const statusTypeMap: Record<string, "info" | "warning" | "success" | "danger"> = {

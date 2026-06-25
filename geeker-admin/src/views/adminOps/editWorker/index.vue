@@ -53,8 +53,10 @@
         </div>
 
         <div class="grid three">
-          <el-form-item label="接单类型">
-            <el-input v-model="form.jobTypesText" placeholder="多个类型请用逗号分隔，如：住家保姆,月嫂" />
+          <el-form-item label="接单类型" class="span-full">
+            <el-checkbox-group v-model="form.job_types">
+              <el-checkbox v-for="item in JOB_TYPE_OPTIONS" :key="item" :label="item">{{ item }}</el-checkbox>
+            </el-checkbox-group>
           </el-form-item>
           <el-form-item label="当前状态">
             <el-select v-model="form.current_status" placeholder="请选择当前状态">
@@ -81,16 +83,50 @@
         </div>
 
         <el-form-item label="居住地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入居住地址" />
+          <el-input v-model="form.address" placeholder="请输入居住地址（现居住地）" />
         </el-form-item>
 
-        <el-form-item label="技能标签" prop="skillsText">
-          <el-input v-model="form.skillsText" placeholder="多个标签请用逗号分隔，如：做饭,保洁,带娃" />
+        <div class="grid four">
+          <el-form-item label="属相">
+            <el-input v-model="form.zodiac" placeholder="如：龙" />
+          </el-form-item>
+          <el-form-item label="婚姻状态">
+            <el-input v-model="form.marital_status" placeholder="如：已婚" />
+          </el-form-item>
+          <el-form-item label="学历">
+            <el-input v-model="form.education" placeholder="如：高中" />
+          </el-form-item>
+          <el-form-item label="籍贯">
+            <el-input v-model="form.native_place" placeholder="如：四川成都" />
+          </el-form-item>
+        </div>
+
+        <el-form-item label="专业技能" prop="skills">
+          <el-checkbox-group v-model="form.skills">
+            <el-checkbox v-for="item in SKILL_OPTIONS" :key="item" :label="item">{{ item }}</el-checkbox>
+          </el-checkbox-group>
         </el-form-item>
 
-        <el-form-item label="个人简介" prop="introduction">
-          <el-input v-model="form.introduction" type="textarea" :rows="4" placeholder="请输入阿姨的经验、擅长方向和服务特点" />
-        </el-form-item>
+        <div class="section-block">
+          <div class="section-head">
+            <div>
+              <h3>个人介绍</h3>
+              <p>分栏填写，小程序详情将按栏目展示。</p>
+            </div>
+          </div>
+          <el-form-item label="家庭情况" prop="family_situation">
+            <el-input v-model="form.family_situation" type="textarea" :rows="3" placeholder="如：已婚，三口之家" />
+          </el-form-item>
+          <el-form-item label="性格描述" prop="personality_desc">
+            <el-input v-model="form.personality_desc" type="textarea" :rows="3" placeholder="如：温和耐心、责任心强" />
+          </el-form-item>
+          <el-form-item label="性格爱好" prop="personality_hobbies">
+            <el-input v-model="form.personality_hobbies" type="textarea" :rows="3" placeholder="如：喜欢孩子、热爱烹饪" />
+          </el-form-item>
+          <el-form-item label="擅长工作" prop="skilled_work">
+            <el-input v-model="form.skilled_work" type="textarea" :rows="3" placeholder="如：小月龄照护、家常菜、家务整理" />
+          </el-form-item>
+        </div>
 
         <el-form-item label="推荐理由">
           <el-input
@@ -138,11 +174,48 @@
           <el-input v-model="form.internal_remark" type="textarea" :rows="3" placeholder="仅后台可见" />
         </el-form-item>
 
-        <el-form-item label="头像">
-          <ImageUploader v-model="form.avatar_url" folder="avatars" tip="建议上传清晰正面照" />
-        </el-form-item>
+        <div class="upload-section avatar-section">
+          <div class="section-head">
+            <div>
+              <h3>头像照片</h3>
+              <p>用于小程序列表与详情页顶部展示。</p>
+            </div>
+            <el-tag type="info" effect="plain">小程序展示</el-tag>
+          </div>
+          <div class="avatar-upload">
+            <ImageUploader v-model="form.avatar_url" folder="avatars" tip="建议上传清晰正面照" />
+          </div>
+        </div>
 
-        <div class="upload-grid">
+        <div class="upload-section life-photo-section">
+          <div class="section-head">
+            <div>
+              <h3>生活工作照片</h3>
+              <p>单独展示在小程序详情页「生活工作照片」区域，与下方证件照片无关。下方 5 个格子各上传 1 张，可传 1～5 张。</p>
+            </div>
+            <div class="section-head-actions">
+              <el-tag type="warning" effect="plain">小程序展示</el-tag>
+            </div>
+          </div>
+          <div class="life-photo-grid">
+            <div v-for="index in MAX_LIFE_PHOTOS" :key="index" class="life-photo-item">
+              <el-form-item :label="`生活照 ${index}`">
+                <ImageUploader v-model="form.life_photos[index - 1]" folder="worker-life" tip="日常、工作场景照片（选填）" />
+              </el-form-item>
+              <el-button v-if="form.life_photos[index - 1]" type="danger" link @click="clearLifePhoto(index - 1)">清空</el-button>
+            </div>
+          </div>
+        </div>
+
+        <div class="upload-section cert-section">
+          <div class="section-head">
+            <div>
+              <h3>证件照片</h3>
+              <p>身份证、健康证等内部存档资料，不在小程序生活照区域展示。</p>
+            </div>
+            <el-tag type="success" effect="plain">内部存档</el-tag>
+          </div>
+          <div class="certificate-grid">
           <el-form-item label="身份证人像面" prop="id_card_front">
             <ImageUploader v-model="form.id_card_front" folder="worker-id-card" />
           </el-form-item>
@@ -167,6 +240,7 @@
           <el-form-item label="其他证件3">
             <ImageUploader v-model="form.other_certificate_3" folder="worker-certificates" />
           </el-form-item>
+          </div>
         </div>
 
         <div class="switch-row">
@@ -201,6 +275,14 @@ import type { FormInstance, FormRules } from "element-plus";
 import { getWorkerDetailApi, updateWorkerApi } from "@/api/modules/business";
 import ImageUploader from "../createWorker/components/ImageUploader.vue";
 import { useCascaderAreaData } from "@vant/area-data";
+import { JOB_TYPE_OPTIONS, SKILL_OPTIONS } from "@/constants/workerOptions";
+
+const MAX_LIFE_PHOTOS = 5;
+
+const padLifePhotos = (photos: string[] = []) => {
+  const filled = photos.map(item => (item || "").trim()).filter(Boolean).slice(0, MAX_LIFE_PHOTOS);
+  return Array.from({ length: MAX_LIFE_PHOTOS }, (_, index) => filled[index] || "");
+};
 
 interface ExperienceItem {
   start_date: string;
@@ -220,13 +302,21 @@ interface WorkerEditFormState {
   emergency_contact: string;
   emergency_phone: string;
   address: string;
+  zodiac: string;
+  marital_status: string;
+  education: string;
+  native_place: string;
+  life_photos: string[];
   address_codes: string[];
   address_detail: string;
   service_area_codes: string[][];
-  skillsText: string;
-  jobTypesText: string;
+  skills: string[];
+  job_types: string[];
   serviceAreasText: string;
-  introduction: string;
+  family_situation: string;
+  personality_desc: string;
+  personality_hobbies: string;
+  skilled_work: string;
   recommendedReasonsText: string;
   internal_remark: string;
   expected_salary?: number;
@@ -271,13 +361,21 @@ const createDefaultForm = (): WorkerEditFormState => ({
   emergency_contact: "",
   emergency_phone: "",
   address: "",
+  zodiac: "",
+  marital_status: "",
+  education: "",
+  native_place: "",
+  life_photos: padLifePhotos(),
   address_codes: [],
   address_detail: "",
   service_area_codes: [],
-  skillsText: "",
-  jobTypesText: "",
+  skills: [],
+  job_types: [],
   serviceAreasText: "",
-  introduction: "",
+  family_situation: "",
+  personality_desc: "",
+  personality_hobbies: "",
+  skilled_work: "",
   recommendedReasonsText: "",
   internal_remark: "",
   expected_salary: undefined,
@@ -318,15 +416,34 @@ const rules: FormRules<WorkerEditFormState> = {
   age: [{ required: true, message: "请输入年龄", trigger: "change" }],
   experience_years: [{ required: true, message: "请输入从业年限", trigger: "change" }],
   address: [{ required: true, message: "请输入居住地址", trigger: "blur" }],
-  skillsText: [{ required: true, message: "请至少输入一项技能", trigger: "blur" }],
-  introduction: [{ required: true, message: "请输入个人简介", trigger: "blur" }]
+  skills: [{ type: "array", required: true, min: 1, message: "请至少选择一项专业技能", trigger: "change" }],
+  family_situation: [{ validator: validateIntroSection, trigger: "blur" }]
 };
+
+function validateIntroSection(_rule: unknown, _value: unknown, callback: (error?: Error) => void) {
+  if (
+    form.family_situation.trim() ||
+    form.personality_desc.trim() ||
+    form.personality_hobbies.trim() ||
+    form.skilled_work.trim()
+  ) {
+    callback();
+    return;
+  }
+  callback(new Error("请至少填写一项个人介绍"));
+}
 
 const splitCommaText = (value: string) =>
   value
     .split(/[\n,，]/)
     .map(item => item.trim())
     .filter(Boolean);
+
+const clearLifePhoto = (index: number) => {
+  form.life_photos[index] = "";
+};
+
+const buildLifePhotosPayload = () => form.life_photos.map(item => item.trim()).filter(Boolean).slice(0, MAX_LIFE_PHOTOS);
 
 const addExperience = () => {
   form.work_experiences.push(createExperience());
@@ -346,6 +463,13 @@ const buildExperiencePayload = () =>
       sort_order: index
     }))
     .filter(item => item.job_content);
+
+const normalizeServiceAreaCodes = (codes: unknown): string[][] => {
+  if (!Array.isArray(codes) || !codes.length) return [];
+  if (Array.isArray(codes[0])) return codes as string[][];
+  if (typeof codes[0] === "string") return [codes as string[]];
+  return [];
+};
 
 const loadDetail = async () => {
   if (!workerId) return;
@@ -367,13 +491,21 @@ const loadDetail = async () => {
       emergency_contact: data.emergency_contact || "",
       emergency_phone: data.emergency_phone || "",
       address: data.address || "",
+      zodiac: data.zodiac || "",
+      marital_status: data.marital_status || "",
+      education: data.education || "",
+      native_place: data.native_place || "",
+      life_photos: padLifePhotos(Array.isArray(data.life_photos) ? data.life_photos : []),
       address_codes: data.address_codes || [],
       address_detail: data.address_detail || "",
-      skillsText: Array.isArray(data.skills) ? data.skills.join(",") : "",
-      jobTypesText: Array.isArray(data.job_types) ? data.job_types.join(",") : "",
+      skills: Array.isArray(data.skills) ? [...data.skills] : [],
+      job_types: Array.isArray(data.job_types) ? [...data.job_types] : [],
       serviceAreasText: Array.isArray(data.service_areas) ? data.service_areas.join(",") : "",
-      service_area_codes: data.service_area_codes || [],
-      introduction: data.introduction || "",
+      service_area_codes: normalizeServiceAreaCodes(data.service_area_codes),
+      family_situation: data.family_situation || "",
+      personality_desc: data.personality_desc || "",
+      personality_hobbies: data.personality_hobbies || "",
+      skilled_work: data.skilled_work || "",
       recommendedReasonsText: Array.isArray(data.recommended_reasons) ? data.recommended_reasons.join("\n") : "",
       internal_remark: data.internal_remark || "",
       expected_salary: data.expected_salary ?? undefined,
@@ -447,13 +579,21 @@ const submitForm = async () => {
       emergency_contact: form.emergency_contact,
       emergency_phone: form.emergency_phone,
       address: form.address,
+      zodiac: form.zodiac,
+      marital_status: form.marital_status,
+      education: form.education,
+      native_place: form.native_place,
+      life_photos: buildLifePhotosPayload(),
       address_codes: form.address_codes || [],
       address_detail: form.address_detail || "",
-      skills: splitCommaText(form.skillsText),
-      job_types: splitCommaText(form.jobTypesText),
+      skills: form.skills,
+      job_types: form.job_types,
       service_areas: getServiceAreaNames(form.service_area_codes || []),
       service_area_codes: form.service_area_codes || [],
-      introduction: form.introduction,
+      family_situation: form.family_situation.trim(),
+      personality_desc: form.personality_desc.trim(),
+      personality_hobbies: form.personality_hobbies.trim(),
+      skilled_work: form.skilled_work.trim(),
       recommended_reasons: splitCommaText(form.recommendedReasonsText),
       work_experiences: buildExperiencePayload(),
       internal_remark: form.internal_remark,
@@ -524,8 +664,86 @@ loadDetail();
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.certificate-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.life-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.upload-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.upload-section .section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.upload-section .section-head h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.upload-section .section-head p {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.section-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.avatar-upload {
+  max-width: 200px;
+}
+
+.life-photo-section {
+  border-color: rgba(230, 162, 60, 0.45);
+  background: rgba(230, 162, 60, 0.04);
+}
+
+.cert-section {
+  border-color: rgba(103, 194, 58, 0.35);
+  background: rgba(103, 194, 58, 0.03);
+}
+
 .switch-row {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.span-full {
+  grid-column: 1 / -1;
+}
+
+:deep(.el-checkbox-group) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.life-photo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .section-block {
@@ -590,6 +808,8 @@ loadDetail();
   .grid.four,
   .grid.three,
   .upload-grid,
+  .certificate-grid,
+  .life-photo-grid,
   .switch-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -600,6 +820,8 @@ loadDetail();
   .grid.three,
   .grid.four,
   .upload-grid,
+  .certificate-grid,
+  .life-photo-grid,
   .switch-row,
   .section-head {
     grid-template-columns: 1fr;

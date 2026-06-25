@@ -91,7 +91,7 @@
                 <el-date-picker v-model="followForm.planned_at" type="datetime" placeholder="请选择时间" value-format="YYYY-MM-DDTHH:mm:ss" />
               </el-form-item>
               <el-form-item label="合同状态">
-                <el-select v-model="followForm.status" placeholder="需要时同步调整合同状态">
+                <el-select v-model="followForm.status" placeholder="需要时同步调整合同状态" clearable>
                   <el-option label="待上户" value="pending_start" />
                   <el-option label="服务中" value="serving" />
                   <el-option label="已暂停" value="paused" />
@@ -99,6 +99,14 @@
                   <el-option label="已终止" value="terminated" />
                   <el-option label="已退款" value="refunded" />
                 </el-select>
+              </el-form-item>
+            </div>
+            <div v-if="followForm.status === 'refunded'" class="grid two-inner">
+              <el-form-item label="退款金额" required>
+                <el-input-number v-model="followForm.refund_amount" :min="0.01" :precision="2" class="full-width" />
+              </el-form-item>
+              <el-form-item label="退款原因" required>
+                <el-input v-model="followForm.refund_reason" type="textarea" :rows="3" placeholder="请填写退款原因" />
               </el-form-item>
             </div>
             <el-form-item label="回访内容">
@@ -173,6 +181,8 @@ const createDefaultFollowForm = () => ({
   result: "",
   planned_at: "",
   status: "",
+  refund_amount: undefined as number | undefined,
+  refund_reason: "",
   content: "",
   need_action: false
 });
@@ -203,6 +213,16 @@ const submitFollowup = async () => {
   if (!followForm.content) {
     ElMessage.warning("请先填写回访内容");
     return;
+  }
+  if (followForm.status === "refunded") {
+    if (followForm.refund_amount === undefined || followForm.refund_amount === null || Number(followForm.refund_amount) <= 0) {
+      ElMessage.warning("已退款状态须填写退款金额");
+      return;
+    }
+    if (!String(followForm.refund_reason || "").trim()) {
+      ElMessage.warning("已退款状态须填写退款原因");
+      return;
+    }
   }
   submitting.value = true;
   try {
@@ -259,6 +279,10 @@ onMounted(loadDetail);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px 18px;
+}
+
+.full-width {
+  width: 100%;
 }
 
 .info-item,

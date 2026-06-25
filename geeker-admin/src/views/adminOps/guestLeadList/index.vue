@@ -20,6 +20,9 @@
       <el-table :data="rows" v-loading="loading">
         <el-table-column prop="customer_name" label="客户称呼" min-width="120" />
         <el-table-column prop="customer_phone" label="联系方式" min-width="140" />
+        <el-table-column prop="demand_detail" label="客户需求" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.demand_detail || "-" }}</template>
+        </el-table-column>
         <el-table-column prop="worker_name" label="意向阿姨" min-width="120">
           <template #default="{ row }">{{ row.worker_name || "-" }}</template>
         </el-table-column>
@@ -85,7 +88,7 @@
 
 <script setup lang="ts">
 import { onActivated, onMounted, ref, reactive } from "vue";
-import { getGuestLeadsApi, updateGuestLeadStatusApi } from "@/api/modules/business";
+import { getGuestLeadsApi, markGuestLeadViewedApi, updateGuestLeadStatusApi } from "@/api/modules/business";
 import { ElMessage } from "element-plus";
 import { formatDate } from "@/utils";
 
@@ -138,11 +141,19 @@ const loadLeads = async () => {
   }
 };
 
-const openStatusModal = (row: any) => {
+const openStatusModal = async (row: any) => {
   currentRow.value = row;
   formData.status = row.status || "pending";
   formData.remark = row.handling_remark || "";
   dialogVisible.value = true;
+  if (!row.is_read && row.id) {
+    try {
+      await markGuestLeadViewedApi(row.id);
+      row.is_read = true;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 };
 
 const submitStatus = async () => {

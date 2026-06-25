@@ -26,24 +26,9 @@ from app.schemas.worker import (
 )
 from app.schemas.response import ApiResponse
 from app.utils.helpers import generate_uuid
+from app.utils.worker_public import enrich_public_worker, mask_worker_name
 
 router = APIRouter()
-
-
-PUBLIC_STATUS_TEXT = {
-    "available": "想接单",
-    "paused": "不接单",
-    "on_job": "上户中",
-    "pending_confirm": "待确认",
-    "blacklisted": "不接单",
-    "inactive": "不接单"
-}
-
-
-def mask_worker_name(name: str):
-    if not name:
-        return ""
-    return f"{name[:1]}**"
 
 
 @router.post("/apply", summary="提交家政阿姨申请")
@@ -484,11 +469,8 @@ async def get_workers(
 
     result_list = []
     for w in workers:
-        d = w.to_dict()
         u = db.query(User).filter(User.id == w.user_id).first()
-        d["avatar_url"] = u.avatar_url if u else ""
-        d["display_name"] = mask_worker_name(w.real_name)
-        d["status_text"] = PUBLIC_STATUS_TEXT.get(w.current_status, "???")
+        d = enrich_public_worker(w, w.to_dict(), u.avatar_url if u else "")
         result_list.append(d)
 
     return ApiResponse.success(
@@ -533,23 +515,68 @@ async def get_worker_detail(
         .all()
     )
 
-    worker_dict = worker.to_dict()
     worker_user = db.query(User).filter(User.id == worker.user_id).first()
-    worker_dict["avatar_url"] = worker_user.avatar_url if worker_user else ""
-    worker_dict["display_name"] = mask_worker_name(worker.real_name)
-    worker_dict["status_text"] = PUBLIC_STATUS_TEXT.get(worker.current_status, "待确认")
-    worker_dict["recommended_reasons"] = worker.recommended_reasons or []
+    worker_dict = enrich_public_worker(
+        worker,
+        worker.to_dict(),
+        worker_user.avatar_url if worker_user else ""
+    )
     worker_dict["work_experiences"] = [item.to_dict() for item in experiences]
-    worker_dict["services"] = [
-        {
-            **service.to_dict(),
-            "price": float(price)
-        }
-        for service, price in services
-    ]
 
     return ApiResponse.success(
         data=worker_dict,
+        message="获取成功"
+    )
+
+
+@router.get("/workers/{worker_id}/share", summary="获取阿姨分享卡片信息")
+async def get_worker_share_info(
+    worker_id: str,
+    staff_id: Optional[str] = Query(None, description="分享员工ID，用于留言归属"),
+    db: Session = Depends(get_db),
+):
+    """供小程序/后台生成真实分享路径；若配置了微信密钥则同时返回 URL Link"""
+    worker = db.query(WorkerProfile).filter(WorkerProfile.user_id == worker_id).first()
+    if not worker:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="家政阿姨不存在"
+        )
+
+    worker_user = db.query(User).filter(User.id == worker.user_id).first()
+    display_name = mask_worker_name(worker.real_name)
+    job_types = worker.job_types or []
+    job_text = "·".join(job_types[:2]) if isinstance(job_types, list) else ""
+    exp_text = f"{worker.experience_years}年经验" if worker.experience_years else ""
+    title_parts = [p for p in [display_name, job_text, exp_text] if p]
+    title = " | ".join(title_parts) if title_parts else f"{display_name} · 玉心家政"
+
+    query_parts = [f"id={worker_id}"]
+    if staff_id:
+        query_parts.append(f"staff_id={staff_id}")
+    query = "&".join(query_parts)
+    mini_path = f"/pages/detail/index?{query}"
+
+    url_link = ""
+    link_error = ""
+    try:
+        from app.utils.wechat_mp import generate_url_link, is_wechat_mp_configured
+
+        if is_wechat_mp_configured():
+            url_link = await generate_url_link("pages/detail/index", query)
+    except Exception as exc:
+        link_error = str(exc)
+
+    return ApiResponse.success(
+        data={
+            "title": title,
+            "path": mini_path,
+            "query": query,
+            "image_url": worker_user.avatar_url if worker_user else "",
+            "url_link": url_link,
+            "url_link_enabled": bool(url_link),
+            "url_link_error": link_error or None,
+        },
         message="获取成功"
     )
 
